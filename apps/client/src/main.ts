@@ -2,7 +2,7 @@ import { html, render } from "lit-html";
 import { parseRoute, type Route } from "./routes";
 import { type ConnectionStatus, connect } from "./socket";
 import "./styles/main.css";
-import { landing } from "./views/landing";
+import { createLandingState, landing } from "./views/landing";
 import { room } from "./views/room";
 
 // The whole client model (see CLAUDE.md): state lives in plain variables, any
@@ -10,16 +10,24 @@ import { room } from "./views/room";
 
 let route: Route = parseRoute(location.pathname);
 let connection: ConnectionStatus = "connecting";
+const landingState = createLandingState();
 
 const root = document.getElementById("app");
 if (!root) throw new Error("missing #app element");
+
+/** Programmatic navigation: push to history, update route, redraw. */
+function navigate(path: string) {
+  history.pushState(null, "", path);
+  route = parseRoute(path);
+  draw();
+}
 
 function draw() {
   render(view(), root as HTMLElement);
 }
 
 function view() {
-  return html`${route.name === "room" ? room(route.code) : landing()}
+  return html`${route.name === "room" ? room(route.code) : landing(landingState, { draw, navigate })}
     <footer>
       Server: <span data-testid="connection" class="status ${connection}">${statusText[connection]}</span>
     </footer>`;

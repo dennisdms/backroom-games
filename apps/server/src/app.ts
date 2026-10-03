@@ -2,6 +2,8 @@ import fastifyStatic from "@fastify/static";
 import fastifyWebsocket from "@fastify/websocket";
 import Fastify from "fastify";
 import { healthRoutes } from "./http/health";
+import { roomRoutes } from "./http/rooms";
+import { RoomManager } from "./rooms";
 import { wsRoutes } from "./ws/socket";
 
 export interface AppOptions {
@@ -11,9 +13,11 @@ export interface AppOptions {
 
 export async function buildApp({ logLevel = "info", staticDir = null }: AppOptions = {}) {
   const app = Fastify({ logger: { level: logLevel } });
+  const roomManager = new RoomManager();
 
   await app.register(fastifyWebsocket);
   await app.register(healthRoutes);
+  await app.register(roomRoutes, { roomManager });
   await app.register(wsRoutes);
 
   if (staticDir) {
