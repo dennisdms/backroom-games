@@ -14,9 +14,21 @@ export async function wsRoutes(app: FastifyInstance) {
         case "ping":
           send(socket, { type: "pong" });
           break;
+        // TODO: rooms and moves. See #14.
+        case "hello":
+        case "startGame":
+        case "placePiece":
+        case "pass":
+        case "rematch":
+          send(socket, {
+            type: "error",
+            code: "not_implemented",
+            message: "Rooms aren't implemented yet",
+          });
+          break;
         default:
           // A type error here means a ClientMessage has no case above.
-          message.type satisfies never;
+          message satisfies never;
       }
     });
   });

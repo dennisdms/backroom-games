@@ -1,0 +1,115 @@
+import { z } from "zod";
+
+// Corners data types, shared by the rules, the server and the client. Each is a
+// Zod schema so the client can validate the state it receives.
+
+/** The four colors, in turn order. */
+export const COLORS = ["blue", "yellow", "red", "green"] as const;
+export const Color = z.enum(COLORS);
+export type Color = z.infer<typeof Color>;
+
+/** A board square: 0 when empty, otherwise `n` for `COLORS[n - 1]`. */
+export const Cell = z.int().min(0).max(COLORS.length);
+export type Cell = z.infer<typeof Cell>;
+
+/**
+ * The board, row-major (`board[y * size + x]`). A plain array rather than a
+ * `Uint8Array`, which doesn't survive `JSON.stringify`.
+ */
+export const Board = z.array(Cell);
+export type Board = z.infer<typeof Board>;
+
+/** The 21 pieces each color owns, named by shape and square count. */
+export const PIECE_IDS = [
+  "I1",
+  "I2",
+  "I3",
+  "V3",
+  "I4",
+  "L4",
+  "O4",
+  "T4",
+  "Z4",
+  "F5",
+  "I5",
+  "L5",
+  "N5",
+  "P5",
+  "T5",
+  "U5",
+  "V5",
+  "W5",
+  "X5",
+  "Y5",
+  "Z5",
+] as const;
+export const PieceId = z.enum(PIECE_IDS);
+export type PieceId = z.infer<typeof PieceId>;
+
+/** An index into a piece's unique orientations (rotations and mirrors). */
+export const Orientation = z.int().min(0);
+export type Orientation = z.infer<typeof Orientation>;
+
+/** A piece in one orientation, with its normalized origin at (x, y). */
+export const Placement = z.object({
+  pieceId: PieceId,
+  orientation: Orientation,
+  x: z.int().min(0),
+  y: z.int().min(0),
+});
+export type Placement = z.infer<typeof Placement>;
+
+export const Move = z.discriminatedUnion("kind", [
+  Placement.extend({ kind: z.literal("place") }),
+  z.object({ kind: z.literal("pass") }),
+]);
+export type Move = z.infer<typeof Move>;
+
+const Point = z.tuple([z.int().min(0), z.int().min(0)]);
+
+/** The board and seating for one way of playing. */
+export const Variant = z.object({
+  size: z.int().min(1),
+  /** Turn order. */
+  colors: z.array(Color),
+  /** The corner square each color must cover with its first piece. */
+  corners: z.record(Color, Point),
+  /** The colors each seat controls, by seat index. */
+  seats: z.array(z.array(Color)),
+});
+export type Variant = z.infer<typeof Variant>;
+
+const CLASSIC_CORNERS: Variant["corners"] = {
+  blue: [0, 0],
+  yellow: [19, 0],
+  red: [19, 19],
+  green: [0, 19],
+};
+
+export const FOUR_PLAYER: Variant = {
+  size: 20,
+  colors: [...COLORS],
+  corners: CLASSIC_CORNERS,
+  seats: [["blue"], ["yellow"], ["red"], ["green"]],
+};
+
+export const TWO_PLAYER: Variant = {
+  size: 20,
+  colors: [...COLORS],
+  corners: CLASSIC_CORNERS,
+  seats: [
+    ["blue", "red"],
+    ["yellow", "green"],
+  ],
+};
+
+export const CornersState = z.object({
+  variant: Variant,
+  board: Board,
+  remaining: z.record(Color, z.array(PieceId)),
+  turn: Color,
+  /** Consecutive passes. */
+  passes: z.int().min(0),
+  lastMove: z.object({ color: Color, move: Move }).nullable(),
+});
+export type CornersState = z.infer<typeof CornersState>;
