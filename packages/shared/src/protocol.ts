@@ -3,7 +3,7 @@ import { z } from "zod";
 // WebSocket messages, shared by client and server. Every message is JSON with
 // a `type` discriminator. To add a message, add its schema to the matching
 // union below; both sides then get the type and the runtime validation.
-// The planned messages are sketched in the research notes (§1.4).
+// The full set of planned messages is in #5.
 
 export const ClientMessage = z.discriminatedUnion("type", [z.object({ type: z.literal("ping") })]);
 export type ClientMessage = z.infer<typeof ClientMessage>;
