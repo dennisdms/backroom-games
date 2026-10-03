@@ -1,0 +1,28 @@
+services:
+  # The demo: `docker compose up --build`, then open http://localhost:3000
+  app:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      LOG_LEVEL: info
+
+  # Hot reload without Node installed: `docker compose --profile dev up`,
+  # then open http://localhost:5173. If you have Node, `pnpm dev` is faster.
+  dev:
+    profiles: [dev]
+    image: node:24
+    working_dir: /app
+    environment:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm dev:host"
+    ports: ["5173:5173"]
+    volumes:
+      - .:/app
+      # Keep the container's dependencies (Linux binaries) off the host checkout.
+      - node_modules:/app/node_modules
+      - /app/packages/shared/node_modules
+      - /app/apps/server/node_modules
+      - /app/apps/client/node_modules
+
+volumes:
+  node_modules: {}
