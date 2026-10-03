@@ -1,0 +1,22 @@
+{
+  "name": "@backroom/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "build": "node build.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@backroom/shared": "workspace:*",
+    "@fastify/static": "10.1.5",
+    "@fastify/websocket": "11.3.1",
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.2",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15"
+  }
+}

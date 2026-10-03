@@ -1,0 +1,56 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f7f5f0;
+  --fg: #1d1d1f;
+  --muted: #6b6b70;
+  --ok: #2f8f46;
+  --warn: #b7791f;
+
+  /* Corners piece colors */
+  --color-blue: #2f6fdb;
+  --color-yellow: #e8b923;
+  --color-red: #d6453d;
+  --color-green: #3a9d55;
+
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18181b;
+    --fg: #ececee;
+    --muted: #9a9aa2;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+#app {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+footer {
+  margin-top: 3rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.status.open {
+  color: var(--ok);
+}
+
+.status.connecting,
+.status.closed {
+  color: var(--warn);
+}
