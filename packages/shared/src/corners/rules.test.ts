@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ORIENTATIONS } from "./pieces";
-import { checkMove, isLegalMove, newGame, placementSquares } from "./rules";
+import {
+  applyMove,
+  checkMove,
+  cornerCandidates,
+  isGameOver,
+  isLegalMove,
+  legalMovesExist,
+  newGame,
+  placementSquares,
+} from "./rules";
 import {
   COLORS,
   type Color,
@@ -273,8 +282,15 @@ describe("checkMove", () => {
   });
 
   describe("passing", () => {
-    it("allows a pass on the color's turn", () => {
-      expect(checkMove(game(blueStarted), "blue", { kind: "pass" })).toEqual({ ok: true });
+    it("rejects a pass while the color can still place", () => {
+      expect(checkMove(game(blueStarted), "blue", { kind: "pass" })).toEqual({
+        ok: false,
+        reason: "can-still-place",
+      });
+    });
+
+    it("allows a pass when the color can't place", () => {
+      expect(checkMove(game({ yellow: [[0, 0]] }), "blue", { kind: "pass" })).toEqual({ ok: true });
     });
 
     it("rejects a pass out of turn", () => {
@@ -285,3 +301,223 @@ describe("checkMove", () => {
     });
   });
 });
+
+/** Every square of `color` on the board, sorted by y then x. */
+const squaresOf = (state: CornersState, color: Color): Squares =>
+  state.board.flatMap(
+    (cell, i): Squares =>
+      cell === COLORS.indexOf(color) + 1 ? [[i % 20, Math.floor(i / 20)]] : [],
+  );
+
+/** Fills every empty square with `filler`, except those listed. */
+const fillExcept = (state: CornersState, filler: Color, keep: Squares = []) => {
+  for (let i = 0; i < state.board.length; i++) {
+    const free = keep.some(([x, y]) => y * 20 + x === i);
+    if (state.board[i] === 0 && !free) state.board[i] = COLORS.indexOf(filler) + 1;
+  }
+  return state;
+};
+
+describe("cornerCandidates", () => {
+  it("is the starting corner before the first piece", () => {
+    expect(cornerCandidates(game(), "blue")).toEqual([[0, 0]]);
+    expect(cornerCandidates(game(), "red")).toEqual([[19, 19]]);
+  });
+
+  it("is empty before the first piece if the corner is taken", () => {
+    expect(cornerCandidates(game({ yellow: [[0, 0]] }), "blue")).toEqual([]);
+  });
+
+  it("is the empty diagonals without an own edge after a piece", () => {
+    // Blue's V3 at (0,0),(0,1),(1,1): diagonals (1,0) and (0,2) touch its edges.
+    const state = game({
+      blue: [
+        [0, 0],
+        [0, 1],
+        [1, 1],
+      ],
+    });
+    expect(cornerCandidates(state, "blue")).toEqual([
+      [2, 0],
+      [2, 2],
+    ]);
+  });
+
+  it("leaves out squares other colors have taken", () => {
+    const state = game({ blue: [[0, 0]], yellow: [[1, 1]] });
+    expect(cornerCandidates(state, "blue")).toEqual([]);
+  });
+
+  it("stays on the board", () => {
+    expect(cornerCandidates(game({ red: [[19, 19]] }), "red")).toEqual([[18, 18]]);
+  });
+});
+
+describe("legalMovesExist", () => {
+  it("is true for every color at the start", () => {
+    for (const color of COLORS) expect(legalMovesExist(game(), color)).toBe(true);
+  });
+
+  it("doesn't depend on whose turn it is", () => {
+    expect(legalMovesExist(game({}, "red"), "blue")).toBe(true);
+  });
+
+  it("is false when the starting corner is taken", () => {
+    expect(legalMovesExist(game({ yellow: [[0, 0]] }), "blue")).toBe(false);
+  });
+
+  it("is false with no pieces left", () => {
+    const state = game(blueStarted);
+    state.remaining.blue = [];
+    expect(legalMovesExist(state, "blue")).toBe(false);
+  });
+
+  it("is false when no remaining piece fits a candidate", () => {
+    // Only (1,1) is free next to blue, and blue has only a domino left.
+    const state = fillExcept(game(blueStarted), "yellow", [[1, 1]]);
+    state.remaining.blue = ["I2"];
+    expect(legalMovesExist(state, "blue")).toBe(false);
+    state.remaining.blue = ["I2", "I1"];
+    expect(legalMovesExist(state, "blue")).toBe(true);
+  });
+});
+
+describe("applyMove", () => {
+  it("places the piece and passes the turn on", () => {
+    const after = applyMove(newGame(FOUR_PLAYER), place("V3", 0, 0));
+    expect(squaresOf(after, "blue")).toEqual([
+      [0, 0],
+      [0, 1],
+      [1, 1],
+    ]);
+    expect(after.remaining.blue).toEqual(PIECE_IDS.filter((id) => id !== "V3"));
+    expect(after.remaining.yellow).toEqual([...PIECE_IDS]);
+    expect(after.lastPlaced).toEqual({ blue: "V3", yellow: null, red: null, green: null });
+    expect(after.lastMove).toEqual({ color: "blue", move: place("V3", 0, 0) });
+    expect(after.turn).toBe("yellow");
+    expect(after.passes).toBe(0);
+    expect(CornersState.parse(after)).toEqual(after);
+  });
+
+  it("goes blue, yellow, red, green and back with 2 players", () => {
+    let state = newGame(TWO_PLAYER);
+    const turns: Color[] = [];
+    for (const move of [
+      place("I1", 0, 0),
+      place("I1", 19, 0),
+      place("I1", 19, 19),
+      place("I1", 0, 19),
+    ]) {
+      state = applyMove(state, move);
+      turns.push(state.turn);
+    }
+    expect(turns).toEqual(["yellow", "red", "green", "blue"]);
+  });
+
+  it("doesn't mutate its input", () => {
+    const state = game(blueStarted);
+    const before = structuredClone(state);
+    applyMove(state, place("I2", 1, 1));
+    expect(state).toEqual(before);
+  });
+
+  it("throws on an illegal move, with the reason", () => {
+    expect(() => applyMove(game(), place("I1", 5, 5))).toThrow(/misses-corner/);
+    expect(() => applyMove(game(blueStarted), { kind: "pass" })).toThrow(/can-still-place/);
+  });
+
+  it("skips a blocked color", () => {
+    // Blue starts in yellow's corner, so yellow can never start.
+    const state = game({ blue: [[19, 0]] });
+    state.variant = { ...state.variant, corners: { ...state.variant.corners, blue: [19, 0] } };
+    const after = applyMove(state, place("I1", 18, 1));
+    expect(after.turn).toBe("red");
+    expect(after.passes).toBe(1);
+  });
+
+  it("wraps around to the mover when everyone else is blocked", () => {
+    const state = game({ green: [[0, 19]] }, "green");
+    state.remaining = { ...state.remaining, blue: [], yellow: [], red: [] };
+    const after = applyMove(state, place("I1", 1, 18));
+    expect(after.turn).toBe("green");
+    expect(after.passes).toBe(3);
+  });
+
+  it("resets the passes on a placement", () => {
+    const state = { ...game(blueStarted), passes: 2 };
+    expect(applyMove(state, place("I2", 1, 1)).passes).toBe(0);
+  });
+
+  it("keeps lastPlaced on a pass", () => {
+    const state: CornersState = {
+      ...game({ yellow: [[0, 0]] }),
+      lastPlaced: { blue: "I1", yellow: "I2", red: null, green: null },
+    };
+    const after = applyMove(state, { kind: "pass" });
+    expect(after.lastPlaced).toEqual(state.lastPlaced);
+    expect(after.lastMove).toEqual({ color: "blue", move: { kind: "pass" } });
+    expect(after.turn).toBe("yellow");
+    expect(after.passes).toBe(1);
+  });
+});
+
+describe("game end", () => {
+  it("isn't over at the start", () => {
+    expect(isGameOver(newGame(FOUR_PLAYER))).toBe(false);
+  });
+
+  it("ends when every color is blocked", () => {
+    // Everything but (1, 1) is taken; blue places its monomino there.
+    const state = fillExcept(game(blueStarted), "yellow", [[1, 1]]);
+    for (const color of COLORS) state.remaining[color] = color === "blue" ? ["I1"] : ["I2"];
+    expect(isGameOver(state)).toBe(false);
+    const after = applyMove(state, place("I1", 1, 1));
+    expect(isGameOver(after)).toBe(true);
+    expect(after.turn).toBe("yellow");
+    expect(after.passes).toBe(COLORS.length);
+  });
+
+  it.each([
+    ["4 players", FOUR_PLAYER],
+    ["2 players", TWO_PLAYER],
+  ])("ends a full %s game played with the first legal move", (_, variant) => {
+    let state = newGame(variant);
+    let moves = 0;
+    while (!isGameOver(state)) {
+      const color = state.turn;
+      const move = firstLegalMove(state);
+      expect(move, `${color} has the turn, so it can move`).not.toBeNull();
+      if (!move) break;
+      const before = state;
+      state = applyMove(state, move);
+      moves++;
+
+      expect(state.lastPlaced[color]).toBe(move.pieceId);
+      expect(state.remaining[color]).toHaveLength(before.remaining[color].length - 1);
+    }
+
+    expect(moves).toBeGreaterThan(20);
+    expect(CornersState.parse(state)).toEqual(state);
+    for (const color of COLORS) {
+      const placed = PIECE_IDS.filter((id) => !state.remaining[color].includes(id));
+      const squares = placed.reduce((sum, id) => sum + (ORIENTATIONS[id][0]?.length ?? 0), 0);
+      expect(squaresOf(state, color)).toHaveLength(squares);
+      expect(legalMovesExist(state, color)).toBe(false);
+    }
+  });
+});
+
+/** The first legal placement for the color to move, by brute force over the board. */
+const firstLegalMove = (state: CornersState): Extract<Move, { kind: "place" }> | null => {
+  for (const pieceId of state.remaining[state.turn]) {
+    for (let orientation = 0; orientation < ORIENTATIONS[pieceId].length; orientation++) {
+      for (let y = 0; y < 20; y++) {
+        for (let x = 0; x < 20; x++) {
+          const move = { kind: "place" as const, pieceId, orientation, x, y };
+          if (isLegalMove(state, state.turn, move)) return move;
+        }
+      }
+    }
+  }
+  return null;
+};

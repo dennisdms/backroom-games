@@ -1,6 +1,5 @@
 // Corners rules: pure functions with no I/O, used by the server to enforce
 // moves and by the client to preview them.
-// TODO: applyMove, legalMovesExist. See #9.
 
 import { ORIENTATIONS, type Shape, type Square } from "./pieces";
 import {
@@ -57,7 +56,9 @@ export type IllegalReason =
   /** A later piece doesn't touch its own color corner to corner. */
   | "no-corner-contact"
   /** A square shares an edge with the same color. */
-  | "touches-own-edge";
+  | "touches-own-edge"
+  /** A pass while the color can still place a piece. */
+  | "can-still-place";
 
 export type MoveCheck = { ok: true } | { ok: false; reason: IllegalReason };
 
@@ -87,12 +88,15 @@ const DIAGONALS: Square[] = [
 ];
 
 /**
- * Whether `color` may make `move` now, and if not, why. A pass is legal on the
- * color's turn; whether it may still place a piece instead is #9's concern.
+ * Whether `color` may make `move` now, and if not, why. A pass is only legal
+ * when the color can't place any piece: as in the board game, a color that can
+ * move must. `applyMove` skips blocked colors, so in play a pass is rejected.
  */
 export const checkMove = (state: CornersState, color: Color, move: Move): MoveCheck => {
   if (state.turn !== color) return illegal("not-your-turn");
-  if (move.kind === "pass") return { ok: true };
+  if (move.kind === "pass") {
+    return legalMovesExist(state, color) ? illegal("can-still-place") : { ok: true };
+  }
   if (!state.remaining[color].includes(move.pieceId)) return illegal("piece-used");
 
   const squares = placementSquares(move);
@@ -123,3 +127,111 @@ export const isLegalMove = (state: CornersState, color: Color, move: Move): bool
   checkMove(state, color, move).ok;
 
 const illegal = (reason: IllegalReason): MoveCheck => ({ ok: false, reason });
+
+const onBoard = (size: number, x: number, y: number) => x >= 0 && y >= 0 && x < size && y < size;
+
+/**
+ * The squares where `color`'s next piece could touch it: empty squares diagonal
+ * to one of its squares with no edge against it, sorted by y then x. Before its
+ * first piece, its starting corner if that's still empty, otherwise none. Every
+ * legal placement covers at least one of these.
+ */
+export const cornerCandidates = (state: CornersState, color: Color): Square[] => {
+  const { size, corners } = state.variant;
+  const own = cellOf(color);
+  const isOwn = (x: number, y: number) => onBoard(size, x, y) && state.board[y * size + x] === own;
+
+  if (!state.board.includes(own)) {
+    const [cx, cy] = corners[color];
+    return state.board[cy * size + cx] === 0 ? [[cx, cy]] : [];
+  }
+
+  const candidates: Square[] = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (state.board[y * size + x] !== 0) continue;
+      if (EDGES.some(([dx, dy]) => isOwn(x + dx, y + dy))) continue;
+      if (DIAGONALS.some(([dx, dy]) => isOwn(x + dx, y + dy))) candidates.push([x, y]);
+    }
+  }
+  return candidates;
+};
+
+/**
+ * Whether `color` could place any piece if it were its turn. Only tries each
+ * remaining orientation anchored so one of its squares lands on a corner
+ * candidate, and stops at the first legal placement.
+ */
+export const legalMovesExist = (state: CornersState, color: Color): boolean => {
+  const candidates = cornerCandidates(state, color);
+  if (candidates.length === 0) return false;
+  const asTurn = state.turn === color ? state : { ...state, turn: color };
+
+  for (const pieceId of state.remaining[color]) {
+    const orientations = ORIENTATIONS[pieceId];
+    for (let orientation = 0; orientation < orientations.length; orientation++) {
+      for (const [dx, dy] of orientations[orientation] ?? []) {
+        for (const [cx, cy] of candidates) {
+          const x = cx - dx;
+          const y = cy - dy;
+          if (x < 0 || y < 0) continue;
+          const move: Move = { kind: "place", pieceId, orientation, x, y };
+          if (checkMove(asTurn, color, move).ok) return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+/**
+ * The game is over when no color can place a piece. Being blocked is permanent
+ * (the board only fills up), so this never turns back to false.
+ */
+export const isGameOver = (state: CornersState): boolean =>
+  state.variant.colors.every((color) => !legalMovesExist(state, color));
+
+/**
+ * The state after the color whose turn it is makes `move`. Throws if the move
+ * is illegal; call `checkMove` first for the reason. A placement covers the
+ * board, uses up the piece and records it in `lastPlaced`. The turn then goes
+ * to the next color in `variant.colors` that can still place, and each color
+ * skipped on the way counts as a pass in `passes` (a placement resets it). Once
+ * no color can place, `isGameOver` is true and `turn` is just the next color.
+ */
+export const applyMove = (state: CornersState, move: Move): CornersState => {
+  const color = state.turn;
+  const check = checkMove(state, color, move);
+  if (!check.ok) throw new Error(`Illegal move for ${color}: ${check.reason}`);
+
+  let next: CornersState = { ...state, lastMove: { color, move } };
+  if (move.kind === "place") {
+    const board = [...state.board];
+    for (const [x, y] of placementSquares(move) ?? []) {
+      board[y * state.variant.size + x] = cellOf(color);
+    }
+    next = {
+      ...next,
+      board,
+      remaining: {
+        ...state.remaining,
+        [color]: state.remaining[color].filter((id) => id !== move.pieceId),
+      },
+      lastPlaced: { ...state.lastPlaced, [color]: move.pieceId },
+      passes: 0,
+    };
+  } else {
+    next = { ...next, passes: state.passes + 1 };
+  }
+
+  const { colors } = state.variant;
+  const start = colors.indexOf(color);
+  let passes = next.passes;
+  for (let step = 1; step <= colors.length; step++) {
+    const candidate = colors[(start + step) % colors.length];
+    if (candidate === undefined) break;
+    if (legalMovesExist(next, candidate)) return { ...next, turn: candidate, passes };
+    passes++;
+  }
+  return { ...next, turn: colors[(start + 1) % colors.length] ?? color, passes };
+};
