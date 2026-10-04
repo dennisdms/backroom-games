@@ -105,3 +105,79 @@ footer {
 .corners-board .overlay.invalid {
   opacity: 0.3;
 }
+
+/* Landing page and name prompt: create or join a room. */
+.entry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--board-line);
+  border-radius: 0.75rem;
+}
+
+.entry-card h2,
+.entry-card p {
+  margin: 0;
+}
+
+.entry-card h2 {
+  font-size: 1.25rem;
+}
+
+.entry-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.entry-card input,
+.entry-card button {
+  /* At least 16px so phones don't zoom in on focus, and big enough to tap. */
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.entry-card input {
+  border: 1px solid var(--board-line);
+  background: var(--bg);
+  color: var(--fg);
+  font-weight: 400;
+}
+
+.entry-card .code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family: ui-monospace, monospace;
+}
+
+.entry-card button {
+  border: none;
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.entry-card button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.form-error {
+  color: var(--color-red);
+}
+
+.name-prompt {
+  max-width: 24rem;
+}
