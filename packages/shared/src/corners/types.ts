@@ -111,5 +111,7 @@ export const CornersState = z.object({
   /** Consecutive passes. */
   passes: z.int().min(0),
   lastMove: z.object({ color: Color, move: Move }).nullable(),
+  /** The piece each color placed most recently, or null before its first. */
+  lastPlaced: z.record(Color, PieceId.nullable()),
 });
 export type CornersState = z.infer<typeof CornersState>;
