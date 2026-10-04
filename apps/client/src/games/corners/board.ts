@@ -1,5 +1,5 @@
-// Corners UI: the SVG board. The piece tray and input handling (keys and
-// pointer) come with #19 and draw on top of this through `overlay`.
+// Corners UI: the SVG board. The piece tray (tray.ts) draws the piece being
+// placed on top of it through `overlay`, and where it could go via `candidates`.
 import {
   COLORS,
   type Color,
@@ -17,14 +17,20 @@ export type BoardOverlay = {
   invalid?: boolean;
 };
 
-export type BoardOptions = { overlay?: BoardOverlay };
+/** Squares marked as places where a color's next piece could go. */
+export type BoardCandidates = { squares: readonly Square[]; color: Color };
+
+export type BoardOptions = {
+  overlay?: BoardOverlay | undefined;
+  candidates?: BoardCandidates | undefined;
+};
 
 /**
  * The board as an SVG drawn from `state`. The viewBox is one unit per square,
  * so square (x, y) sits at x..x+1, y..y+1, and each square carries `data-x` and
  * `data-y`. `squareAt` maps a pointer position back to a square.
  */
-export const cornersBoard = (state: CornersState, { overlay }: BoardOptions = {}) => {
+export const cornersBoard = (state: CornersState, { overlay, candidates }: BoardOptions = {}) => {
   const { size, corners } = state.variant;
   const lastSquares =
     state.lastMove?.move.kind === "place" ? placementSquares(state.lastMove.move) : null;
@@ -63,6 +69,15 @@ export const cornersBoard = (state: CornersState, { overlay }: BoardOptions = {}
         fill=${covered ? "var(--bg)" : `var(--color-${color})`}
       />`;
     })}
+    ${
+      candidates
+        ? svg`<g class="candidates" fill="var(--color-${candidates.color})">
+          ${candidates.squares.map(
+            ([x, y]) => svg`<rect x=${x + 0.3} y=${y + 0.3} width="0.4" height="0.4" rx="0.1" />`,
+          )}
+        </g>`
+        : nothing
+    }
     ${lastSquares ? svg`<path class="last-move" d=${outlinePath(lastSquares)} />` : nothing}
     ${
       overlay
