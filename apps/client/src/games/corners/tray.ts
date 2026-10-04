@@ -171,6 +171,7 @@ const reasonText: Record<IllegalReason, string> = {
   "misses-corner": "Your first piece has to cover your corner.",
   "no-corner-contact": "It has to touch one of your pieces corner to corner.",
   "touches-own-edge": "It can't share an edge with your own pieces.",
+  "can-still-place": "You can't pass while you can still place a piece.",
 };
 
 /** The board with the ghost, the controls and the tray, for `color`. */

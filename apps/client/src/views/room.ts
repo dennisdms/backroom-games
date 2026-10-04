@@ -1,4 +1,4 @@
-import type { Placement } from "@backroom/shared";
+import { applyMove, isGameOver, type Placement } from "@backroom/shared";
 import { html, nothing, render } from "lit-html";
 import { ref } from "lit-html/directives/ref.js";
 import { exampleState } from "../games/corners/example";
@@ -18,7 +18,7 @@ export const room = (code: string) => html`
 `;
 
 // Dev-only until rooms can play (#20): a hard-coded game to try the tray on,
-// playing whichever color's turn it is. It renders into its own element so
+// playing whichever color's turn it is, hot-seat. It renders into its own element so
 // its UI changes redraw only the preview.
 const demo = {
   state: exampleState(),
@@ -35,17 +35,25 @@ const demoProps = (): TrayProps => ({
   draw: drawPreview,
   onConfirm: (placement) => {
     demo.sent = placement;
-    // Once #9 lands, play it too:
-    // demo.state = applyMove(demo.state, demo.state.turn, { kind: "place", ...placement });
+    demo.state = applyMove(demo.state, { kind: "place", ...placement });
   },
 });
+
+const resetDemo = () => {
+  demo.state = exampleState();
+  demo.tray = newTrayLocal();
+  demo.sent = null;
+  drawPreview();
+};
 
 function drawPreview() {
   if (!demo.root) return;
   const { sent } = demo;
   render(
     html`${cornersTray(demoProps())}
-    ${sent ? html`<p class="muted">Would send placePiece ${JSON.stringify(sent)}</p>` : nothing}`,
+    ${sent ? html`<p class="muted">Would send placePiece ${JSON.stringify(sent)}</p>` : nothing}
+    ${isGameOver(demo.state) ? html`<p>Game over.</p>` : nothing}
+    <p><button @click=${resetDemo}>Reset preview</button></p>`,
     demo.root,
   );
 }
