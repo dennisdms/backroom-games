@@ -11,7 +11,10 @@ describe("exampleState", () => {
     const last = state.lastMove;
     if (last?.move.kind !== "place") throw new Error("expected a placement");
     expect(last.color).toBe("blue");
-    for (const [x, y] of placementSquares(last.move)) {
+    expect(state.lastPlaced.blue).toBe("I3");
+    const squares = placementSquares(last.move) ?? [];
+    expect(squares).toHaveLength(3);
+    for (const [x, y] of squares) {
       expect(state.board[y * state.variant.size + x]).toBe(1);
     }
   });

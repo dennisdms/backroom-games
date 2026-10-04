@@ -26,7 +26,8 @@ export type BoardOptions = { overlay?: BoardOverlay };
  */
 export const cornersBoard = (state: CornersState, { overlay }: BoardOptions = {}) => {
   const { size, corners } = state.variant;
-  const last = state.lastMove?.move.kind === "place" ? state.lastMove.move : null;
+  const lastSquares =
+    state.lastMove?.move.kind === "place" ? placementSquares(state.lastMove.move) : null;
 
   return html`<svg
     class="corners-board"
@@ -62,7 +63,7 @@ export const cornersBoard = (state: CornersState, { overlay }: BoardOptions = {}
         fill=${covered ? "var(--bg)" : `var(--color-${color})`}
       />`;
     })}
-    ${last ? svg`<path class="last-move" d=${outlinePath(placementSquares(last))} />` : nothing}
+    ${lastSquares ? svg`<path class="last-move" d=${outlinePath(lastSquares)} />` : nothing}
     ${
       overlay
         ? svg`<g class="overlay ${overlay.invalid ? "invalid" : ""}" fill="var(--color-${overlay.color})">
