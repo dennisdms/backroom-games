@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { normalize, ORIENTATIONS, PIECES, type Shape } from "./pieces";
+import {
+  flipOrientation,
+  normalize,
+  ORIENTATIONS,
+  PIECES,
+  rotateOrientation,
+  type Shape,
+} from "./pieces";
 import { PIECE_IDS } from "./types";
 
 const key = (shape: Shape) => normalize(shape).join(";");
@@ -66,5 +73,58 @@ describe("ORIENTATIONS", () => {
       expect(o).toEqual(normalize(o));
       expect(o).toHaveLength(PIECES[id].length);
     }
+  });
+});
+
+describe("rotateOrientation and flipOrientation", () => {
+  it("turns L4 clockwise and back, as seen on screen", () => {
+    const turned = rotateOrientation("L4", 0, 1);
+    expect(ORIENTATIONS.L4[turned]).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+    ]);
+    expect(rotateOrientation("L4", turned, -1)).toBe(0);
+  });
+
+  it("flips L4 left to right", () => {
+    expect(ORIENTATIONS.L4[flipOrientation("L4", 0)]).toEqual([
+      [1, 0],
+      [1, 1],
+      [0, 2],
+      [1, 2],
+    ]);
+  });
+
+  it.each(PIECE_IDS)("%s returns to the start after four turns or two flips", (id) => {
+    ORIENTATIONS[id].forEach((_, start) => {
+      let o = start;
+      for (let i = 0; i < 4; i++) o = rotateOrientation(id, o);
+      expect(o).toBe(start);
+      for (let i = 0; i < 4; i++) o = rotateOrientation(id, o, -1);
+      expect(o).toBe(start);
+      expect(rotateOrientation(id, rotateOrientation(id, start), -1)).toBe(start);
+      expect(flipOrientation(id, flipOrientation(id, start))).toBe(start);
+    });
+  });
+
+  it.each(PIECE_IDS)("%s reaches every orientation by turning and flipping", (id) => {
+    const seen = new Set<number>();
+    for (const first of [0, flipOrientation(id, 0)]) {
+      let o = first;
+      for (let i = 0; i < 4; i++) {
+        seen.add(o);
+        o = rotateOrientation(id, o);
+      }
+    }
+    expect(seen.size).toBe(ORIENTATIONS[id].length);
+  });
+
+  it("keeps the monomino and X5 at 0, and turns an unknown orientation from the base", () => {
+    expect(rotateOrientation("I1", 0)).toBe(0);
+    expect(flipOrientation("I1", 0)).toBe(0);
+    expect(rotateOrientation("X5", 0, -1)).toBe(0);
+    expect(rotateOrientation("I2", 99)).toBe(1);
   });
 });
