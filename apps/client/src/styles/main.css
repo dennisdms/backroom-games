@@ -12,6 +12,10 @@
   --color-red: #d6453d;
   --color-green: #3a9d55;
 
+  /* Corners board */
+  --board-empty: #e6e2d8;
+  --board-line: #c9c4b8;
+
   font-family: system-ui, sans-serif;
   line-height: 1.5;
 }
@@ -21,6 +25,8 @@
     --bg: #18181b;
     --fg: #ececee;
     --muted: #9a9aa2;
+    --board-empty: #26262b;
+    --board-line: #3a3a41;
   }
 }
 
@@ -53,4 +59,49 @@ footer {
 .status.connecting,
 .status.closed {
   color: var(--warn);
+}
+
+/* Corners board: square, as wide as the page allows but short enough that it
+   fits on screen with room left for controls. */
+.corners-board {
+  display: block;
+  width: 100%;
+  max-width: 75svh;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  /* Don't clip the last-move outline along the board's edge. */
+  overflow: visible;
+}
+
+.corners-board .square {
+  stroke: var(--board-line);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.corners-board .start {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.corners-board .start.covered {
+  opacity: 0.8;
+}
+
+.corners-board .last-move {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 3px;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+}
+
+.corners-board .overlay {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.corners-board .overlay.invalid {
+  opacity: 0.3;
 }
