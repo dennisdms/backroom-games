@@ -1,5 +1,5 @@
 // Corners pieces: the 21 polyominoes each color owns, and their orientations.
-import type { PieceId } from "./types";
+import type { PieceId, Placement } from "./types";
 
 /** A square of a piece, relative to the piece's origin. */
 export type Square = readonly [x: number, y: number];
@@ -177,3 +177,13 @@ export const orientationsOf = (shape: Shape): Shape[] => {
 export const ORIENTATIONS: Readonly<Record<PieceId, readonly Shape[]>> = Object.fromEntries(
   Object.entries(PIECES).map(([id, shape]) => [id, orientationsOf(shape)]),
 ) as Record<PieceId, Shape[]>;
+
+/**
+ * The board squares a placement covers: its orientation's squares offset by
+ * the placement's (x, y). Throws for an orientation the piece doesn't have.
+ */
+export const placementSquares = ({ pieceId, orientation, x, y }: Placement): Square[] => {
+  const shape = ORIENTATIONS[pieceId][orientation];
+  if (!shape) throw new RangeError(`${pieceId} has no orientation ${orientation}`);
+  return shape.map(([dx, dy]) => [x + dx, y + dy]);
+};

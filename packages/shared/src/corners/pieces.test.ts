@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalize, ORIENTATIONS, PIECES, type Shape } from "./pieces";
+import { normalize, ORIENTATIONS, PIECES, placementSquares, type Shape } from "./pieces";
 import { PIECE_IDS } from "./types";
 
 const key = (shape: Shape) => normalize(shape).join(";");
@@ -66,5 +66,28 @@ describe("ORIENTATIONS", () => {
       expect(o).toEqual(normalize(o));
       expect(o).toHaveLength(PIECES[id].length);
     }
+  });
+});
+
+describe("placementSquares", () => {
+  it("offsets the orientation's squares by the placement position", () => {
+    expect(placementSquares({ pieceId: "V3", orientation: 0, x: 4, y: 7 })).toEqual([
+      [4, 7],
+      [4, 8],
+      [5, 8],
+    ]);
+  });
+
+  it("uses the chosen orientation", () => {
+    const shape = ORIENTATIONS.L4[2] ?? [];
+    expect(placementSquares({ pieceId: "L4", orientation: 2, x: 1, y: 1 })).toEqual(
+      shape.map(([x, y]) => [x + 1, y + 1]),
+    );
+  });
+
+  it("throws for an orientation the piece doesn't have", () => {
+    expect(() => placementSquares({ pieceId: "O4", orientation: 1, x: 0, y: 0 })).toThrow(
+      RangeError,
+    );
   });
 });
