@@ -20,6 +20,7 @@ const game: CornersState = {
   turn: "yellow",
   passes: 0,
   lastMove: { color: "blue", move: { kind: "place", pieceId: "I1", orientation: 0, x: 0, y: 0 } },
+  lastPlaced: { blue: "I1", yellow: null, red: null, green: null },
 };
 
 const room: RoomState = {

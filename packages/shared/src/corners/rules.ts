@@ -31,6 +31,7 @@ export const newGame = (variant: Variant): CornersState => ({
   turn: firstColor(variant),
   passes: 0,
   lastMove: null,
+  lastPlaced: { blue: null, yellow: null, red: null, green: null },
 });
 
 const firstColor = (variant: Variant) => {
