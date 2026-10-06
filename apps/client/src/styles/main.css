@@ -171,6 +171,29 @@ footer {
   cursor: pointer;
 }
 
+.corners-play .key-cap {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-left: 0.35rem;
+  padding: 0 0.3em;
+  border: 1px solid var(--board-line);
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75em;
+  line-height: 1.5;
+  text-align: center;
+  vertical-align: 0.1em;
+}
+
+/* Nothing can hover, so it's a touch-only device: no keyboard to show keys for. */
+@media (any-hover: none) {
+  .corners-play .key-cap {
+    display: none;
+  }
+}
+
 .corners-play button:disabled {
   opacity: 0.45;
   cursor: default;

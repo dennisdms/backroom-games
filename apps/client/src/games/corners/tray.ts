@@ -275,19 +275,23 @@ export const cornersTray = (props: TrayProps) => {
         ?disabled=${!piece}
         @click=${run("rotate-ccw")}
         aria-label="Rotate left"
-        title="Rotate left (E)"
+        aria-keyshortcuts="E"
+        title="Rotate left"
       >
-        ⟲ <span class="label">Rotate</span>
+        ⟲ <span class="label">Rotate</span> ${keyCap("E")}
       </button>
       <button
         ?disabled=${!piece}
         @click=${run("rotate-cw")}
         aria-label="Rotate right"
-        title="Rotate right (R)"
+        aria-keyshortcuts="R"
+        title="Rotate right"
       >
-        ⟳ <span class="label">Rotate</span>
+        ⟳ <span class="label">Rotate</span> ${keyCap("R")}
       </button>
-      <button ?disabled=${!piece} @click=${run("flip")} title="Flip (F)">⇋ Flip</button>
+      <button ?disabled=${!piece} @click=${run("flip")} aria-label="Flip" aria-keyshortcuts="F">
+        ⇋ Flip ${keyCap("F")}
+      </button>
     </div>
     <div class="corners-tray" role="group" aria-label="Your pieces">
       ${remaining.map(
@@ -307,6 +311,9 @@ export const cornersTray = (props: TrayProps) => {
     </div>
   </div>`;
 };
+
+/** A control's hotkey as a key cap. CSS hides it on touch-only devices. */
+const keyCap = (key: string) => html`<kbd class="key-cap" aria-hidden="true">${key}</kbd>`;
 
 /** A piece's base shape, centered in a 5×5 box so pieces keep their relative size. */
 const pieceIcon = (id: PieceId, color: Color) => {
