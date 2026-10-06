@@ -378,3 +378,102 @@ footer {
   height: 1.25rem;
   border-radius: 0.25rem;
 }
+
+/* Game and results (games/corners/game.ts): whose turn, the scores, Pass and
+   Rematch around the board. */
+.turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+}
+
+.turn.yours {
+  font-weight: 700;
+}
+
+.scores {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.score {
+  display: flex;
+  flex: 1 1 10rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--board-line);
+  border-radius: 0.5rem;
+}
+
+.score.current {
+  border-color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--fg);
+}
+
+.score .seat-colors {
+  margin-left: 0;
+}
+
+.score .points {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.results .scores {
+  flex-direction: column;
+}
+
+.results .score {
+  flex: none;
+}
+
+.results .rank {
+  min-width: 2.5rem;
+  font-weight: 700;
+}
+
+.winner {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.pass {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pass button,
+.results button {
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--board-line);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.pass button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.results button.primary {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: #fff;
+  font-weight: 600;
+}
