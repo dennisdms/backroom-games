@@ -15,6 +15,7 @@
   /* Corners board */
   --board-empty: #e6e2d8;
   --board-line: #c9c4b8;
+  --ghost-illegal: #8e8e93;
 
   font-family: system-ui, sans-serif;
   line-height: 1.5;
@@ -27,6 +28,7 @@
     --muted: #9a9aa2;
     --board-empty: #26262b;
     --board-line: #3a3a41;
+    --ghost-illegal: #6e6e76;
   }
 }
 
@@ -112,8 +114,8 @@ footer {
 }
 
 .corners-board .overlay {
-  fill-opacity: 0.6;
-  stroke: var(--ghost-legal, var(--ok));
+  fill-opacity: 0.9;
+  stroke: var(--fg);
   stroke-width: 2px;
   pointer-events: none;
 }
@@ -123,8 +125,8 @@ footer {
 }
 
 .corners-board .overlay.invalid {
-  fill-opacity: 0.3;
-  stroke: var(--ghost-illegal, #d0342c);
+  fill-opacity: 0.75;
+  stroke: var(--muted);
   stroke-dasharray: 4 3;
 }
 
