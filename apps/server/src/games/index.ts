@@ -10,8 +10,6 @@ export {
   maxPlayers,
   type PlayerColors,
   type PlayerId,
-  type Ranking,
-  rankByScore,
 } from "./types";
 
 const games = new Map<string, GameModule>([[corners.id, corners]]);
