@@ -1,12 +1,13 @@
 import {
   flipOrientation,
   newGame,
+  PIECE_IDS,
   placementSquares,
   rotateOrientation,
   TWO_PLAYER,
 } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { act, ghostPlacement, keyAction, newTrayLocal, pressBoard } from "./tray";
+import { act, bySize, ghostPlacement, keyAction, newTrayLocal, pressBoard } from "./tray";
 
 describe("ghostPlacement", () => {
   it("puts the top left of the piece on the anchor", () => {
@@ -125,5 +126,29 @@ describe("pressBoard", () => {
     const local = { ...newTrayLocal(), piece: "I1" as const, touch: true, tapped: [5, 5] as const };
     expect(pressBoard(state, "blue", local, [5, 5])).toBeNull();
     expect(local).toMatchObject({ piece: "I1", tapped: [5, 5] });
+  });
+});
+
+describe("bySize", () => {
+  const all = PIECE_IDS.map((id) => ({ id, color: "blue" as const }));
+
+  it("puts a full hand in five rows, one per square count", () => {
+    const rows = bySize(all);
+    expect(rows.map((r) => r.size)).toEqual([1, 2, 3, 4, 5]);
+    expect(rows.map((r) => r.pieces.length)).toEqual([1, 1, 2, 5, 12]);
+    expect(rows[2]?.pieces.map((p) => p.id)).toEqual(["I3", "V3"]);
+    expect(rows.flatMap((r) => r.pieces)).toEqual(all);
+  });
+
+  it("leaves out sizes with no pieces and keeps the order within a row", () => {
+    const pieces = [
+      { id: "X5", color: "red" },
+      { id: "I1", color: "blue" },
+      { id: "F5", color: "blue" },
+    ] as const;
+    expect(bySize(pieces)).toEqual([
+      { size: 1, pieces: [pieces[1]] },
+      { size: 5, pieces: [pieces[0], pieces[2]] },
+    ]);
   });
 });

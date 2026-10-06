@@ -15,7 +15,7 @@ import {
   rotateOrientation,
   type Square,
 } from "@backroom/shared";
-import { html, nothing, svg } from "lit-html";
+import { html, nothing, svg, type TemplateResult } from "lit-html";
 import { type BoardOverlay, cornersBoard, squareAt } from "./board";
 
 /** The tray's UI-only state. Whoever shows the tray owns it and passes it in. */
@@ -289,22 +289,22 @@ export const cornersTray = (props: TrayProps) => {
         ⇋ Flip ${keyCap("F")}
       </button>
     </div>
-    <div class="corners-tray" role="group" aria-label="Your pieces">
-      ${remaining.map(
-        (id) => html`<button
-          class="tray-piece"
-          aria-label=${id}
-          aria-pressed=${id === piece ? "true" : "false"}
-          @click=${() => {
-            select(local, id);
-            draw();
-          }}
-        >
-          ${pieceIcon(id, color)}
-        </button>`,
-      )}
-      ${remaining.length === 0 ? html`<p class="muted">No pieces left.</p>` : nothing}
-    </div>
+    ${pieceGrid(
+      "Your pieces",
+      remaining.map((id) => ({ id, color })),
+      ({ id }) => html`<button
+        class="tray-piece"
+        aria-label=${id}
+        aria-pressed=${id === piece ? "true" : "false"}
+        @click=${() => {
+          select(local, id);
+          draw();
+        }}
+      >
+        ${pieceIcon(id, color)}
+      </button>`,
+    )}
+    ${remaining.length === 0 ? html`<p class="muted">No pieces left.</p>` : nothing}
   </div>`;
 };
 
@@ -320,3 +320,37 @@ export const pieceIcon = (id: PieceId, color: Color) => {
     ${shape.map(([x, y]) => svg`<rect x=${x + dx} y=${y + dy} width="1" height="1" />`)}
   </svg>`;
 };
+
+export type GridPiece = { id: PieceId; color: Color };
+
+/** Pieces in rows by square count, smallest first, keeping their order within a row. */
+export const bySize = <T extends GridPiece>(pieces: readonly T[]) => {
+  const sizes = [...new Set(pieces.map(({ id }) => PIECES[id].length))].sort((a, b) => a - b);
+  return sizes.map((size) => ({
+    size,
+    pieces: pieces.filter(({ id }) => PIECES[id].length === size),
+  }));
+};
+
+/**
+ * Pieces in rows by size, each row labeled with its square count. `cell` draws
+ * one piece. Your tray and another player's hand both use it.
+ */
+export const pieceGrid = <T extends GridPiece>(
+  label: string,
+  pieces: readonly T[],
+  cell: (piece: T) => TemplateResult,
+) =>
+  html`<div class="corners-tray" role="group" aria-label=${label}>
+    ${bySize(pieces).map(
+      ({ size, pieces }) => html`<div
+        class="tray-row"
+        role="group"
+        aria-label=${size === 1 ? "1 square" : `${size} squares`}
+        data-size=${size}
+      >
+        <span class="tray-size" aria-hidden="true">${size}</span>
+        <div class="tray-pieces">${pieces.map(cell)}</div>
+      </div>`,
+    )}
+  </div>`;

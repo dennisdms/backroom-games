@@ -13,7 +13,14 @@ import {
 } from "@backroom/shared";
 import { html, nothing } from "lit-html";
 import { cornersBoard } from "./board";
-import { cornersTray, newTrayLocal, pieceIcon, type TrayLocal, type TrayProps } from "./tray";
+import {
+  cornersTray,
+  newTrayLocal,
+  pieceGrid,
+  pieceIcon,
+  type TrayLocal,
+  type TrayProps,
+} from "./tray";
 
 /** UI-only game state: the tray's picked piece, orientation and ghost. */
 export interface GameLocal {
@@ -181,13 +188,19 @@ const handView = (room: RoomState, hand: Hand, l: GameLocal, a: GameActions) => 
       <span>${hand.name}'s pieces (${count})</span>
       <button type="button" @click=${back}>Back to your pieces</button>
     </p>
-    <ul class="corners-tray" aria-label="${hand.name}'s pieces">
-      ${hand.pieces.map(
-        ({ color, id }) => html`<li class="tray-piece" data-piece=${id} title=${id}>
-          ${pieceIcon(id, color)}
-        </li>`,
-      )}
-    </ul>
+    ${pieceGrid(
+      `${hand.name}'s pieces`,
+      hand.pieces,
+      ({ color, id }) => html`<span
+        class="tray-piece"
+        role="img"
+        aria-label=${id}
+        data-piece=${id}
+        title=${id}
+      >
+        ${pieceIcon(id, color)}
+      </span>`,
+    )}
     ${count === 0 ? html`<p class="muted">No pieces left.</p>` : nothing}
   </div>`;
 };
