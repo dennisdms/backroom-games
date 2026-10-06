@@ -1,18 +1,20 @@
-// Games: the GameModule interface and the Corners adapter, which wraps the
-// rules in @backroom/shared. TODO: #13.
+// Games: the GameModule interface and the registry of games rooms can play.
+import { corners } from "./corners";
+import type { GameModule } from "./types";
 
-/**
- * Stand-in for the GameModule registry: just enough for the rooms API to know
- * which game ids exist and how many seats they have.
- * TODO(#13): replace with the registry of `GameModule`s.
- */
-export interface GameInfo {
-  maxPlayers: number;
-}
+export { corners } from "./corners";
+export {
+  type GameModule,
+  type MoveCheck,
+  maxPlayers,
+  type PlayerId,
+  type Ranking,
+  rankByScore,
+} from "./types";
 
-const games = new Map<string, GameInfo>([["corners", { maxPlayers: 4 }]]);
+const games = new Map<string, GameModule>([[corners.id, corners]]);
 
 /** The game with this id, or undefined if there is none. */
-export function findGame(id: string): GameInfo | undefined {
+export function findGame(id: string): GameModule | undefined {
   return games.get(id);
 }

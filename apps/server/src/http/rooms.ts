@@ -5,7 +5,7 @@ import {
   type RoomInfo,
 } from "@backroom/shared";
 import type { FastifyError, FastifyInstance } from "fastify";
-import { findGame } from "../games";
+import { findGame, maxPlayers } from "../games";
 
 export async function roomRoutes(app: FastifyInstance) {
   // Malformed JSON and the like: answer in the API's error shape, not Fastify's.
@@ -29,7 +29,7 @@ export async function roomRoutes(app: FastifyInstance) {
     }
     const { room, player } = await app.rooms.create({
       gameId: body.data.game,
-      maxPlayers: game.maxPlayers,
+      maxPlayers: maxPlayers(game),
       name: body.data.name,
     });
     return reply
