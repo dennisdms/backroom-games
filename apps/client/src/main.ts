@@ -39,7 +39,11 @@ function draw() {
 }
 
 function view() {
-  return html`${page()}
+  // The board is stale until the restarted server sends the room again.
+  const restarting = session?.restarting
+    ? html`<p class="notice" role="status">Updating, back in a moment…</p>`
+    : null;
+  return html`${restarting}${page()}
     <footer>
       Server: <span data-testid="connection" class="status ${connection}">${statusText[connection]}</span>
     </footer>`;

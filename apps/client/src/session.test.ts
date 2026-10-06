@@ -53,4 +53,24 @@ describe("receive", () => {
     session = receive(session, { type: "roomState", room: room(1) });
     expect(session.error).toBeNull();
   });
+
+  it("shows a restart until the next state", () => {
+    let session = receive(newSession("K7QXM"), { type: "roomState", room: room(1) });
+    session = receive(session, { type: "serverRestarting" });
+    expect(session.restarting).toBe(true);
+    session = receive(session, { type: "playerPresence", seat: 0, online: false });
+    expect(session.restarting).toBe(true);
+    session = receive(session, { type: "welcome", you: 1, token: "t", room: room(1) });
+    expect(session.restarting).toBe(false);
+  });
+
+  it("stops showing a restart that lost the room", () => {
+    let session = receive(newSession("K7QXM"), { type: "serverRestarting" });
+    session = receive(session, {
+      type: "error",
+      code: "room_not_found",
+      message: "There's no room with that code",
+    });
+    expect(session.restarting).toBe(false);
+  });
 });
