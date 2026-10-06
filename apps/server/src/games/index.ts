@@ -5,8 +5,10 @@ import type { GameModule } from "./types";
 export { corners } from "./corners";
 export {
   type GameModule,
+  type GameView,
   type MoveCheck,
   maxPlayers,
+  type PlayerColors,
   type PlayerId,
   type Ranking,
   rankByScore,

@@ -115,3 +115,11 @@ describe("corners.view", () => {
     expect(corners.view(state, 2)).toBe(state);
   });
 });
+
+describe("corners.colors", () => {
+  it("gives each seat its variant colors", () => {
+    expect(corners.colors(fourPlayers(), 2)).toEqual(["red"]);
+    expect(corners.colors(corners.init([0, 1], undefined), 1)).toEqual(["yellow", "green"]);
+    expect(corners.colors(fourPlayers(), 7)).toEqual([]);
+  });
+});
