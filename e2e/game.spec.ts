@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { createRoom, seats, square } from "./helpers";
 
 // Separate browser contexts share no storage, like two players on two devices.
@@ -59,6 +59,27 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   await expect(scores.nth(0)).toContainText("-88");
   await expect(scores.nth(1)).toContainText("-89");
 
+  // Clicking a name shows that player's remaining pieces in place of the tray.
+  const player = (page: Page, name: string) =>
+    page.getByTestId("scores").getByRole("button", { name: new RegExp(name) });
+  await player(guest, "Ada").click();
+  await expect(player(guest, "Ada")).toHaveAttribute("aria-pressed", "true");
+  const adaHand = guest.getByTestId("hand");
+  await expect(adaHand).toContainText("Ada's pieces (20)");
+  await expect(adaHand.locator(".tray-piece")).toHaveCount(20);
+  await expect(adaHand.locator('[data-piece="I1"]')).toHaveCount(0);
+  await expect(guest.getByRole("button", { name: "I2", exact: true })).toHaveCount(0);
+  await guest.getByRole("button", { name: "Back to your pieces" }).click();
+  await expect(guest.getByTestId("hand")).toHaveCount(0);
+  await expect(player(guest, "Grace")).toHaveAttribute("aria-pressed", "true");
+  await expect(guest.getByRole("button", { name: "I2", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  // The host looks at Grace's pieces while she plays.
+  await player(host, "Grace").click();
+  await expect(host.getByTestId("hand").locator('[data-piece="I2"]')).toHaveCount(1);
+
   // Yellow's domino, picked while waiting, on its corner, top right.
   await square(guest, 19, 0).click();
   for (const page of [host, guest]) {
@@ -69,6 +90,10 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   // With one color each, it's back to Ada's blue.
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
   await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
+  // On their turn, the host's own tray comes back.
+  await expect(host.getByTestId("hand")).toHaveCount(0);
+  await expect(host.getByRole("button", { name: "I1", exact: true })).toHaveCount(0);
+  await expect(host.getByRole("button", { name: "I2", exact: true })).toBeVisible();
   // Both corners are covered, so no dots are left.
   await expect(host.locator("circle.start")).toHaveCount(0);
 

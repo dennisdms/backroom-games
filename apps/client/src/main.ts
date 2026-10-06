@@ -1,7 +1,7 @@
 import { CreateRoomRequest, MAX_NAME_LENGTH } from "@backroom/shared";
 import { html, render } from "lit-html";
 import { createRoom, getRoom } from "./api";
-import { type GameActions, gameTrayProps, newGameLocal } from "./games/corners/game";
+import { type GameActions, gameTrayProps, newGameLocal, turnCameToYou } from "./games/corners/game";
 import { listenForTrayKeys } from "./games/corners/tray";
 import { normalizeCode, parseRoute, type Route, roomPath, withPlayer } from "./routes";
 import { newSession, receive, type Session } from "./session";
@@ -239,10 +239,12 @@ const socket = connect({
     if (message.type === "welcome" && message.room.code === session.code) {
       storage.setToken(session.code, message.token);
     }
-    const before = session.room?.phase;
+    const before = session.room;
     session = receive(session, message);
-    // A new game (start or rematch) starts with nothing picked.
-    if (session.room?.phase !== before) gameLocal = newGameLocal();
+    // A new game (start or rematch) starts with nothing picked and your own pieces.
+    if (session.room?.phase !== before?.phase) gameLocal = newGameLocal();
+    // On your turn, your tray comes back if you were looking at someone else's pieces.
+    else if (turnCameToYou(before, session.room)) gameLocal.viewing = null;
     draw();
   },
 });

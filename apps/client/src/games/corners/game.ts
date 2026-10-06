@@ -1,9 +1,11 @@
-// Corners UI: the game screen (whose turn, scores, the board and tray, Pass)
-// and the results screen (ranking and Rematch), drawn from the room's state.
+// Corners UI: the game screen (whose turn, the players and their scores, the
+// board and your tray or another player's pieces, Pass) and the results screen
+// (ranking and Rematch), drawn from the room's state.
 import {
   type Color,
   type CornersState,
   legalMovesExist,
+  type PieceId,
   type Placement,
   type RoomState,
   rankByScore,
@@ -11,14 +13,16 @@ import {
 } from "@backroom/shared";
 import { html, nothing } from "lit-html";
 import { cornersBoard } from "./board";
-import { cornersTray, newTrayLocal, type TrayLocal, type TrayProps } from "./tray";
+import { cornersTray, newTrayLocal, pieceIcon, type TrayLocal, type TrayProps } from "./tray";
 
 /** UI-only game state: the tray's picked piece, orientation and ghost. */
 export interface GameLocal {
   tray: TrayLocal;
+  /** The seat whose remaining pieces show in place of your tray, or null for your own. */
+  viewing: number | null;
 }
 
-export const newGameLocal = (): GameLocal => ({ tray: newTrayLocal() });
+export const newGameLocal = (): GameLocal => ({ tray: newTrayLocal(), viewing: null });
 
 export interface GameActions {
   /** Sends `placePiece`. */
@@ -50,6 +54,44 @@ export const trayColor = (state: CornersState, seat: number): Color | null => {
     if (color !== undefined && mine.includes(color)) return color;
   }
   return null;
+};
+
+/** Whether the color to move is this player's. */
+export const isYourTurn = (room: RoomState, state: CornersState): boolean =>
+  seatOf(state, state.turn) === room.you;
+
+const yourTurnInPlay = (room: RoomState | null | undefined): boolean =>
+  room?.phase === "playing" && room.game ? isYourTurn(room, room.game) : false;
+
+/** Whether it's become your turn between two room states, e.g. to bring your tray back. */
+export const turnCameToYou = (
+  before: RoomState | null | undefined,
+  after: RoomState | null | undefined,
+): boolean => !yourTurnInPlay(before) && yourTurnInPlay(after);
+
+/** Shows `seat`'s pieces in place of the tray, or your own tray for your seat. */
+export const viewSeat = (room: RoomState, l: GameLocal, seat: number) => {
+  l.viewing = seat === room.you ? null : seat;
+};
+
+/** Another seat's remaining pieces, read-only. */
+export type Hand = {
+  seat: number;
+  name: string;
+  pieces: { color: Color; id: PieceId }[];
+};
+
+/** The hand shown in place of your tray, or null when you're looking at your own. */
+export const viewedHand = (room: RoomState, state: CornersState, l: GameLocal): Hand | null => {
+  const seat = l.viewing;
+  if (seat === null || seat === room.you) return null;
+  const colors = state.variant.seats[seat];
+  if (!colors) return null;
+  return {
+    seat,
+    name: nameOf(room, seat),
+    pieces: colors.flatMap((color) => state.remaining[color].map((id) => ({ color, id }))),
+  };
 };
 
 /** "Your turn (blue)" or "Grace's turn (yellow)". */
@@ -95,30 +137,59 @@ export const resultText = (room: RoomState, list: readonly Standing[]): string =
 /** 1st, 2nd, 3rd, 4th. Enough for four seats. */
 export const ordinal = (n: number): string => `${n}${["th", "st", "nd", "rd"][n] ?? "th"}`;
 
-/** The tray for this player's seat, or null if they have no colors. */
+/**
+ * The tray for this player's seat, or null if they have no colors or are
+ * looking at another player's pieces.
+ */
 export const gameTrayProps = (
   room: RoomState,
   state: CornersState,
   l: GameLocal,
   a: GameActions,
 ): TrayProps | null => {
+  if (viewedHand(room, state, l)) return null;
   const color = trayColor(state, room.you);
   return color && { state, color, local: l.tray, draw: a.draw, onConfirm: a.onPlace };
 };
 
 /** The game while it's being played. */
 export const cornersGame = (room: RoomState, state: CornersState, l: GameLocal, a: GameActions) => {
+  const hand = viewedHand(room, state, l);
   const tray = gameTrayProps(room, state, l, a);
-  const yours = tray !== null && tray.color === state.turn;
+  const yours = isYourTurn(room, state);
   return html`<section class="game" data-testid="game">
+    ${players(room, state, l, a)}
     <p class="turn ${yours ? "yours" : ""}" data-testid="turn" aria-live="polite">
       <span class="swatch" style="background: var(--color-${state.turn})"></span>
       ${turnText(room, state)}
     </p>
-    ${scores(room, state)}
     ${tray ? cornersTray(tray) : cornersBoard(state)}
-    ${yours ? pass(state, state.turn, a) : nothing}
+    ${hand ? handView(room, hand, l, a) : nothing}
+    ${yours && tray ? pass(state, state.turn, a) : nothing}
   </section>`;
+};
+
+/** Another player's remaining pieces, read-only, with a way back to yours. */
+const handView = (room: RoomState, hand: Hand, l: GameLocal, a: GameActions) => {
+  const back = () => {
+    viewSeat(room, l, room.you);
+    a.draw();
+  };
+  const count = hand.pieces.length;
+  return html`<div class="hand" data-testid="hand" data-seat=${hand.seat}>
+    <p class="hand-head">
+      <span>${hand.name}'s pieces (${count})</span>
+      <button type="button" @click=${back}>Back to your pieces</button>
+    </p>
+    <ul class="corners-tray" aria-label="${hand.name}'s pieces">
+      ${hand.pieces.map(
+        ({ color, id }) => html`<li class="tray-piece" data-piece=${id} title=${id}>
+          ${pieceIcon(id, color)}
+        </li>`,
+      )}
+    </ul>
+    ${count === 0 ? html`<p class="muted">No pieces left.</p>` : nothing}
+  </div>`;
 };
 
 /**
@@ -134,22 +205,37 @@ const pass = (state: CornersState, color: Color, a: GameActions) => {
   </p>`;
 };
 
-/** The live scores, one row per seat, with the seat to move marked. */
-const scores = (room: RoomState, state: CornersState) => {
+/**
+ * The players and their live scores, one per seat, with the seat to move
+ * marked. Clicking one shows their remaining pieces; yours shows your tray.
+ */
+const players = (room: RoomState, state: CornersState, l: GameLocal, a: GameActions) => {
   const { byColor, bySeat } = score(state);
   const moving = seatOf(state, state.turn);
-  return html`<ul class="scores" data-testid="scores" aria-label="Scores">
-    ${state.variant.seats.map(
-      (colors, seat) => html`<li
-        class="score ${seat === moving ? "current" : ""}"
-        data-seat=${seat}
-      >
-        ${swatches(colors, (c) => `${c}: ${byColor[c]}`)}
-        <span class="seat-name">${nameOf(room, seat)}</span>
-        ${seat === room.you ? html`<span class="muted">(you)</span>` : nothing}
-        <strong class="points">${bySeat[seat]}</strong>
-      </li>`,
-    )}
+  const shown = viewedHand(room, state, l)?.seat ?? room.you;
+  return html`<ul class="scores players" data-testid="scores" aria-label="Players">
+    ${state.variant.seats.map((colors, seat) => {
+      const name = nameOf(room, seat);
+      const you = seat === room.you;
+      return html`<li class="score ${seat === moving ? "current" : ""}" data-seat=${seat}>
+        <button
+          type="button"
+          class="player"
+          aria-pressed=${seat === shown ? "true" : "false"}
+          title=${you ? "Show your pieces" : `Show ${name}'s pieces`}
+          @click=${() => {
+            viewSeat(room, l, seat);
+            a.draw();
+          }}
+        >
+          ${swatches(colors, (c) => `${c}: ${byColor[c]}`)}
+          <span class="seat-name">${name}</span>
+          ${you ? html`<span class="muted">(you)</span>` : nothing}
+          ${seat === moving ? html`<span class="to-move">to move</span>` : nothing}
+          <strong class="points">${bySeat[seat]}</strong>
+        </button>
+      </li>`;
+    })}
   </ul>`;
 };
 
