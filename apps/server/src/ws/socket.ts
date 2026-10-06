@@ -44,6 +44,18 @@ const joinErrors: Record<JoinError, string> = {
 /** A seat's change to the room. Throw a ClientError to reject it; nothing is saved then. */
 type Change = (room: Room, game: GameModule, seat: number) => void;
 
+/**
+ * Tells every connection the server is going away, so clients can say so
+ * instead of showing a dead board. Call it before registering
+ * @fastify/websocket: its own preClose hook then closes the sockets, after this
+ * message.
+ */
+export function warnBeforeClose(app: FastifyInstance) {
+  app.addHook("preClose", async () => {
+    for (const socket of app.websocketServer.clients) send(socket, { type: "serverRestarting" });
+  });
+}
+
 export async function wsRoutes(
   app: FastifyInstance,
   { pingTimeoutMs = PING_TIMEOUT_MS }: WsOptions,

@@ -52,6 +52,20 @@ footer {
   color: var(--muted);
 }
 
+/* "Updating, back in a moment": stays in view above the board. */
+.notice {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 1;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--warn);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--warn);
+  text-align: center;
+}
+
 .status.open {
   color: var(--ok);
 }

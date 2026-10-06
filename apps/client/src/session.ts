@@ -7,9 +7,19 @@ export interface Session {
   room: RoomState | null;
   /** The server's last `error` message, cleared by the next state. */
   error: string | null;
+  /**
+   * The server said it is restarting. True until the new one answers `hello`
+   * with a state, or with an error if the restart lost the room.
+   */
+  restarting: boolean;
 }
 
-export const newSession = (code: string): Session => ({ code, room: null, error: null });
+export const newSession = (code: string): Session => ({
+  code,
+  room: null,
+  error: null,
+  restarting: false,
+});
 
 /**
  * The session after a server message. Room states for other rooms, and older
@@ -22,7 +32,7 @@ export function receive(session: Session, message: ServerMessage): Session {
       const { room } = message;
       if (room.code !== session.code) return session;
       if (session.room && room.version < session.room.version) return session;
-      return { ...session, room, error: null };
+      return { ...session, room, error: null, restarting: false };
     }
     case "playerPresence": {
       if (!session.room) return session;
@@ -32,7 +42,9 @@ export function receive(session: Session, message: ServerMessage): Session {
       return { ...session, room: { ...session.room, players } };
     }
     case "error":
-      return { ...session, error: message.message };
+      return { ...session, error: message.message, restarting: false };
+    case "serverRestarting":
+      return { ...session, restarting: true };
     default:
       return session;
   }

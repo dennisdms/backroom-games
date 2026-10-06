@@ -5,7 +5,7 @@ import { healthRoutes } from "./http/health";
 import { roomRoutes } from "./http/rooms";
 import { RoomManager } from "./rooms";
 import { InMemoryRoomStore } from "./store";
-import { PING_TIMEOUT_MS, wsRoutes } from "./ws/socket";
+import { PING_TIMEOUT_MS, warnBeforeClose, wsRoutes } from "./ws/socket";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -35,6 +35,7 @@ export async function buildApp({
   const stopSweep = rooms.startSweep(undefined, (e) => app.log.error(e));
   app.addHook("onClose", async () => stopSweep());
 
+  warnBeforeClose(app);
   await app.register(fastifyWebsocket);
   await app.register(healthRoutes);
   await app.register(roomRoutes);

@@ -294,4 +294,17 @@ describe("connection", () => {
     expect(client.ws.readyState).toBe(client.ws.OPEN);
     await closed;
   });
+
+  it("warns every connection before the server closes", async () => {
+    const { ada, bob } = await twoPlayers();
+    const lurker = await connect();
+    const closed = Promise.all(
+      [ada, bob, lurker].map((c) => new Promise((resolve) => c.ws.once("close", resolve))),
+    );
+    await app.close();
+    await closed;
+    for (const c of [ada, bob, lurker]) {
+      expect(c.inbox.at(-1)).toEqual({ type: "serverRestarting" });
+    }
+  });
 });
