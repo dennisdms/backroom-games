@@ -7,6 +7,7 @@ import { type ConnectionStatus, connect } from "./socket";
 import { browserStore, playerFromSearch, playerStorage } from "./storage";
 import "./styles/main.css";
 import { type FormAction, type Forms, landing } from "./views/landing";
+import { type LobbyLocal, newLobbyLocal } from "./views/lobby";
 import { namePrompt } from "./views/name-prompt";
 import { room } from "./views/room";
 
@@ -30,6 +31,7 @@ const local: Forms = {
   pending: null,
   error: null,
 };
+const lobbyLocal: LobbyLocal = newLobbyLocal();
 
 const root = document.getElementById("app");
 if (!root) throw new Error("missing #app element");
@@ -73,7 +75,10 @@ function page() {
       onSubmit: () => submitName(code),
     });
   }
-  return room(code, session);
+  return room(code, session, lobbyLocal, {
+    onCopy: () => copyLink(code),
+    onStart: () => socket.send({ type: "startGame" }),
+  });
 }
 
 const statusText: Record<ConnectionStatus, string> = {
@@ -153,6 +158,25 @@ async function submitName(code: string) {
   local.pending = null;
   sync();
   draw();
+}
+
+let copyTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Copies the room's link (without `?player=N`) and shows brief feedback. */
+async function copyLink(code: string) {
+  try {
+    await navigator.clipboard.writeText(new URL(roomPath(code), location.origin).href);
+    lobbyLocal.copy = "copied";
+  } catch {
+    // No clipboard outside secure contexts, e.g. over plain http on the LAN.
+    lobbyLocal.copy = "failed";
+  }
+  draw();
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => {
+    lobbyLocal.copy = "idle";
+    draw();
+  }, 2000);
 }
 
 /**

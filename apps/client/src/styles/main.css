@@ -286,3 +286,95 @@ footer {
 .name-prompt {
   max-width: 24rem;
 }
+
+/* Lobby (views/lobby.ts): the room code, the seats and the Start button. */
+.room-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-code strong {
+  font-family: ui-monospace, monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+}
+
+.lobby button {
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--board-line);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.lobby button.start:not(:disabled) {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: #fff;
+  font-weight: 600;
+}
+
+.lobby button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.seats {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  border: 1px solid var(--board-line);
+  border-radius: 0.75rem;
+}
+
+.seat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.seat + .seat {
+  border-top: 1px solid var(--board-line);
+}
+
+.seat .presence {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.seat.offline .presence {
+  background: var(--board-line);
+}
+
+.seat.offline .seat-name {
+  color: var(--muted);
+}
+
+.seat .tag {
+  padding: 0 0.4rem;
+  border: 1px solid var(--board-line);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.seat-colors {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.swatch {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+}
