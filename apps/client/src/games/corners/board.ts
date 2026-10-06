@@ -13,7 +13,7 @@ import { html, nothing, svg } from "lit-html";
 export type BoardOverlay = {
   squares: readonly Square[];
   color: Color;
-  /** Drawn as invalid (e.g. an illegal placement). Defaults to valid. */
+  /** Drawn in gray instead of `color` (e.g. an illegal placement). Defaults to valid. */
   invalid?: boolean;
 };
 
@@ -81,7 +81,10 @@ export const cornersBoard = (state: CornersState, { overlay, candidates }: Board
     ${lastSquares ? svg`<path class="last-move" d=${outlinePath(lastSquares)} />` : nothing}
     ${
       overlay
-        ? svg`<g class="overlay ${overlay.invalid ? "invalid" : ""}" fill="var(--color-${overlay.color})">
+        ? svg`<g
+          class="overlay ${overlay.invalid ? "invalid" : ""}"
+          fill=${overlay.invalid ? "var(--ghost-illegal)" : `var(--color-${overlay.color})`}
+        >
           ${overlay.squares.map(([x, y]) => svg`<rect x=${x} y=${y} width="1" height="1" />`)}
         </g>`
         : nothing
