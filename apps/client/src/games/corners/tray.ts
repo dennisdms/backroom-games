@@ -1,6 +1,6 @@
-// Corners UI: playing a piece. The tray of remaining pieces, the rotate, flip,
-// undo and confirm controls, and the ghost of the piece on the board. Placing
-// the ghost is local; nothing leaves the client until the player confirms.
+// Corners UI: playing a piece. The tray of remaining pieces, the rotate and
+// flip controls, and the ghost of the piece on the board. Clicking the board
+// plays the piece there; on touch, the first tap previews it.
 import {
   type Color,
   type CornersState,
@@ -26,32 +26,35 @@ export type TrayLocal = {
   orientation: number;
   /** The square under the mouse or pen, which the ghost follows. */
   hover: Square | null;
-  /** Where a click or tap put the ghost. Confirm plays it, Undo clears it. */
-  pinned: Square | null;
+  /** Where a tap put the ghost. Touch has no hover; tapping it again plays it. */
+  tapped: Square | null;
+  /** Whether the last press on the board was a touch. */
+  touch: boolean;
 };
 
 export const newTrayLocal = (): TrayLocal => ({
   piece: null,
   orientation: 0,
   hover: null,
-  pinned: null,
+  tapped: null,
+  touch: false,
 });
 
 export type TrayProps = {
   state: CornersState;
   /**
    * The color this player places. When it isn't its turn, pieces can still be
-   * picked, turned and flipped, but not put on the board or confirmed.
+   * picked, turned and flipped, but not put on the board.
    */
   color: Color;
   local: TrayLocal;
   /** Redraws after `local` changes. */
   draw: () => void;
-  /** Called with the confirmed move, e.g. to send `placePiece`. */
+  /** Called with the move the player made, e.g. to send `placePiece`. */
   onConfirm: (placement: Placement) => void;
 };
 
-export type TrayAction = "rotate-cw" | "rotate-ccw" | "flip" | "undo" | "cancel";
+export type TrayAction = "rotate-cw" | "rotate-ccw" | "flip" | "cancel";
 
 /**
  * Where a piece goes when `anchor` is the square under the pointer: the top
@@ -98,10 +101,7 @@ export const keyAction = (event: {
   }
 };
 
-/**
- * Applies `action` to `local`. Returns whether anything changed. "undo" lifts
- * the placed ghost; "cancel" does that, or else puts the piece back.
- */
+/** Applies `action` to `local`. Returns whether anything changed. "cancel" puts the piece back. */
 export const act = (local: TrayLocal, action: TrayAction): boolean => {
   const { piece } = local;
   switch (action) {
@@ -118,14 +118,9 @@ export const act = (local: TrayLocal, action: TrayAction): boolean => {
       if (!piece) return false;
       local.orientation = flipOrientation(piece, local.orientation);
       return true;
-    case "undo":
-      if (!local.pinned) return false;
-      local.pinned = null;
-      return true;
     case "cancel":
-      if (local.pinned) local.pinned = null;
-      else if (piece) Object.assign(local, { piece: null, orientation: 0 });
-      else return false;
+      if (!piece) return false;
+      Object.assign(local, { piece: null, orientation: 0, tapped: null });
       return true;
     default:
       return action satisfies never;
@@ -134,7 +129,7 @@ export const act = (local: TrayLocal, action: TrayAction): boolean => {
 
 /** Picks `pieceId`, or puts it back if it's already picked. */
 const select = (local: TrayLocal, pieceId: PieceId) => {
-  if (local.piece === pieceId) Object.assign(local, { piece: null, orientation: 0 });
+  if (local.piece === pieceId) Object.assign(local, { piece: null, orientation: 0, tapped: null });
   else Object.assign(local, { piece: pieceId, orientation: 0 });
 };
 
@@ -161,7 +156,33 @@ const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
   (target.isContentEditable || target.matches("input, textarea, select"));
 
-const isTurn = ({ state, color }: TrayProps) => state.turn === color;
+/** The picked piece, unless `color` has played it since. */
+const pickedPiece = (state: CornersState, color: Color, local: TrayLocal) =>
+  local.piece && state.remaining[color].includes(local.piece) ? local.piece : null;
+
+/**
+ * A click or tap on `square`. Plays the picked piece there if that's legal, and
+ * otherwise does nothing. Touch has no hover, so a tap first moves the ghost
+ * there and a second tap on the same square plays it. Returns the move to
+ * play, or null.
+ */
+export const pressBoard = (
+  state: CornersState,
+  color: Color,
+  local: TrayLocal,
+  square: Square,
+): Placement | null => {
+  const piece = pickedPiece(state, color, local);
+  if (state.turn !== color || !piece) return null;
+  if (local.touch && !sameSquare(square, local.tapped)) {
+    local.tapped = square;
+    return null;
+  }
+  const placement = ghostPlacement(piece, local.orientation, square, state.variant.size);
+  if (!checkMove(state, color, { kind: "place", ...placement }).ok) return null;
+  Object.assign(local, { piece: null, orientation: 0, tapped: null });
+  return placement;
+};
 
 const sameSquare = (a: Square | null, b: Square | null) =>
   a === b || (a !== null && b !== null && a[0] === b[0] && a[1] === b[1]);
@@ -182,19 +203,17 @@ const reasonText: Record<IllegalReason, string> = {
 export const cornersTray = (props: TrayProps) => {
   const { state, color, local, draw } = props;
   const { size } = state.variant;
-  const turn = isTurn(props);
+  const turn = state.turn === color;
   const remaining = state.remaining[color];
-  // The picked piece, unless it was played since.
-  const piece = local.piece && remaining.includes(local.piece) ? local.piece : null;
+  const piece = pickedPiece(state, color, local);
   // The ghost only goes on the board on our turn.
-  const anchor = turn ? (local.pinned ?? local.hover) : null;
+  const anchor = turn ? (local.tapped ?? local.hover) : null;
   const placement = piece && anchor ? ghostPlacement(piece, local.orientation, anchor, size) : null;
   const check = placement ? checkMove(state, color, { kind: "place", ...placement }) : null;
   const overlay: BoardOverlay | undefined =
     placement && check
       ? { squares: placementSquares(placement) ?? [], color, invalid: !check.ok }
       : undefined;
-  const ready = local.pinned !== null && placement !== null && check?.ok === true;
 
   const status = (() => {
     if (remaining.length === 0) return "You've placed all your pieces.";
@@ -202,7 +221,7 @@ export const cornersTray = (props: TrayProps) => {
     if (!piece) return "Pick a piece.";
     if (!check) return "Tap or click the board to place it.";
     if (!check.ok) return reasonText[check.reason];
-    return ready ? "Confirm to play it." : "Click to place it here.";
+    return local.tapped ? "Tap again to play it." : "Click to play it here.";
   })();
 
   const squareFrom = (event: PointerEvent | MouseEvent) => {
@@ -211,31 +230,30 @@ export const cornersTray = (props: TrayProps) => {
     return board && squareAt(board.getBoundingClientRect(), size, event.clientX, event.clientY);
   };
   const onPointerMove = (event: PointerEvent) => {
-    if (event.pointerType === "touch") return; // Touch places by tapping.
+    if (event.pointerType === "touch") return; // Touch previews by tapping.
     const square = squareFrom(event);
-    if (sameSquare(square, local.hover)) return;
-    local.hover = square;
-    if (turn && piece && !local.pinned) draw();
+    if (sameSquare(square, local.hover) && !local.tapped) return;
+    Object.assign(local, { hover: square, tapped: null });
+    if (turn && piece) draw();
   };
   const onPointerLeave = () => {
     if (!local.hover) return;
     local.hover = null;
-    if (turn && piece && !local.pinned) draw();
+    if (turn && piece && !local.tapped) draw();
+  };
+  // Click events don't say what made them in every browser, so remember it.
+  const onPointerDown = (event: PointerEvent) => {
+    local.touch = event.pointerType === "touch";
   };
   const onBoardClick = (event: MouseEvent) => {
     const square = squareFrom(event);
-    if (!turn || !piece || !square) return;
-    local.pinned = square;
+    if (!square) return;
+    const move = pressBoard(state, color, local, square);
+    if (move) props.onConfirm(move);
     draw();
   };
   const run = (action: TrayAction) => () => {
     if (act(local, action)) draw();
-  };
-  const confirm = () => {
-    if (!ready || !placement) return;
-    Object.assign(local, { piece: null, orientation: 0, pinned: null });
-    props.onConfirm(placement);
-    draw();
   };
 
   return html`<div class="corners-play">
@@ -243,6 +261,7 @@ export const cornersTray = (props: TrayProps) => {
       class="corners-play-board ${turn && piece ? "placing" : ""}"
       @pointermove=${onPointerMove}
       @pointerleave=${onPointerLeave}
+      @pointerdown=${onPointerDown}
       @click=${onBoardClick}
     >
       ${cornersBoard(state, {
@@ -269,8 +288,6 @@ export const cornersTray = (props: TrayProps) => {
         ⟳ <span class="label">Rotate</span>
       </button>
       <button ?disabled=${!piece} @click=${run("flip")} title="Flip (F)">⇋ Flip</button>
-      <button ?disabled=${!turn || !local.pinned || !piece} @click=${run("undo")}>Undo</button>
-      <button class="primary" ?disabled=${!ready} @click=${confirm}>Confirm</button>
     </div>
     <div class="corners-tray" role="group" aria-label="Your pieces">
       ${remaining.map(

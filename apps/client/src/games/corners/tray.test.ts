@@ -1,6 +1,12 @@
-import { flipOrientation, placementSquares, rotateOrientation } from "@backroom/shared";
+import {
+  flipOrientation,
+  newGame,
+  placementSquares,
+  rotateOrientation,
+  TWO_PLAYER,
+} from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { act, ghostPlacement, keyAction, newTrayLocal } from "./tray";
+import { act, ghostPlacement, keyAction, newTrayLocal, pressBoard } from "./tray";
 
 describe("ghostPlacement", () => {
   it("puts the top left of the piece on the anchor", () => {
@@ -56,7 +62,6 @@ describe("act", () => {
     const local = newTrayLocal();
     expect(act(local, "rotate-cw")).toBe(false);
     expect(act(local, "flip")).toBe(false);
-    expect(act(local, "undo")).toBe(false);
     expect(act(local, "cancel")).toBe(false);
   });
 
@@ -69,19 +74,56 @@ describe("act", () => {
     expect(local.orientation).toBe(flipOrientation("L4", 0));
   });
 
-  it("undo lifts the ghost, cancel lifts it and then puts the piece back", () => {
+  it("cancel puts the piece back", () => {
     const local = {
       ...newTrayLocal(),
       piece: "T4" as const,
       orientation: 2,
-      pinned: [3, 4] as const,
+      tapped: [3, 4] as const,
     };
-    expect(act(local, "undo")).toBe(true);
-    expect(local).toMatchObject({ piece: "T4", pinned: null });
-    local.pinned = [3, 4];
-    act(local, "cancel");
-    expect(local).toMatchObject({ piece: "T4", pinned: null });
-    act(local, "cancel");
+    expect(act(local, "cancel")).toBe(true);
+    expect(local).toMatchObject({ piece: null, orientation: 0, tapped: null });
+  });
+});
+
+describe("pressBoard", () => {
+  const state = newGame(TWO_PLAYER); // Blue to move, its corner top left.
+
+  it("plays a legal move with one click", () => {
+    const local = { ...newTrayLocal(), piece: "I1" as const };
+    expect(pressBoard(state, "blue", local, [0, 0])).toEqual({
+      pieceId: "I1",
+      orientation: 0,
+      x: 0,
+      y: 0,
+    });
     expect(local).toMatchObject({ piece: null, orientation: 0 });
+  });
+
+  it("does nothing on an illegal click", () => {
+    const local = { ...newTrayLocal(), piece: "I1" as const };
+    expect(pressBoard(state, "blue", local, [5, 5])).toBeNull();
+    expect(local).toEqual({ ...newTrayLocal(), piece: "I1" });
+  });
+
+  it("does nothing off turn or without a piece", () => {
+    expect(pressBoard(state, "yellow", { ...newTrayLocal(), piece: "I1" }, [19, 0])).toBeNull();
+    expect(pressBoard(state, "blue", newTrayLocal(), [0, 0])).toBeNull();
+  });
+
+  it("on touch, previews on the first tap and plays on a second tap there", () => {
+    const local = { ...newTrayLocal(), piece: "I1" as const, touch: true };
+    expect(pressBoard(state, "blue", local, [3, 3])).toBeNull();
+    expect(local.tapped).toEqual([3, 3]);
+    expect(pressBoard(state, "blue", local, [0, 0])).toBeNull();
+    expect(local.tapped).toEqual([0, 0]);
+    expect(pressBoard(state, "blue", local, [0, 0])).toMatchObject({ x: 0, y: 0 });
+    expect(local).toMatchObject({ piece: null, tapped: null });
+  });
+
+  it("on touch, a second tap on an illegal preview does nothing", () => {
+    const local = { ...newTrayLocal(), piece: "I1" as const, touch: true, tapped: [5, 5] as const };
+    expect(pressBoard(state, "blue", local, [5, 5])).toBeNull();
+    expect(local).toMatchObject({ piece: "I1", tapped: [5, 5] });
   });
 });
