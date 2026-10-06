@@ -93,7 +93,7 @@ describe("hello", () => {
         phase: "lobby",
         players: [{ seat: 0, name: "Ada", online: true, colors: [] }],
         host: 0,
-        playerCounts: [2, 4],
+        playerCounts: [2, 3, 4],
         you: 0,
         game: null,
         version: 0,
@@ -109,8 +109,8 @@ describe("hello", () => {
     expect(state.room).toMatchObject({ you: 0, version: 1 });
     // Two players can start, so the lobby shows the colors they'd play.
     expect(state.room.players).toEqual([
-      { seat: 0, name: "Ada", online: true, colors: ["blue", "red"] },
-      { seat: 1, name: "Bob", online: true, colors: ["yellow", "green"] },
+      { seat: 0, name: "Ada", online: true, colors: ["blue"] },
+      { seat: 1, name: "Bob", online: true, colors: ["yellow"] },
     ]);
     expect(JSON.stringify(state)).not.toContain(welcome.token);
   });
@@ -151,7 +151,7 @@ describe("hello", () => {
       seat: 1,
       name: "Bob",
       online: true,
-      colors: ["yellow", "green"],
+      colors: ["yellow"],
     });
     expect(welcome.room.game?.board[0]).toBe(1);
     expect(welcome.room.game?.turn).toBe("yellow");
@@ -197,10 +197,7 @@ describe("moves", () => {
     ] as const) {
       const { room } = await player.next("roomState");
       expect(room).toMatchObject({ phase: "playing", you, version: 2 });
-      expect(room.players.map((p) => p.colors)).toEqual([
-        ["blue", "red"],
-        ["yellow", "green"],
-      ]);
+      expect(room.players.map((p) => p.colors)).toEqual([["blue"], ["yellow"]]);
       expect(room.game?.turn).toBe("blue");
     }
 
@@ -216,7 +213,7 @@ describe("moves", () => {
     for (const player of [ada, bob]) {
       const { room } = await player.next("roomState");
       expect(room.version).toBe(4);
-      expect(room.game?.turn).toBe("red");
+      expect(room.game?.turn).toBe("blue");
     }
   });
 
@@ -245,7 +242,7 @@ describe("moves", () => {
     // Leave blue a single piece and everyone else none.
     await app.rooms.update(code, (room) => {
       const state = CornersState.parse(room.game);
-      room.game = { ...state, remaining: { blue: ["I1"], yellow: [], red: [], green: [] } };
+      room.game = { ...state, remaining: { ...state.remaining, blue: ["I1"], yellow: [] } };
     });
 
     ada.send(monominoAt(0, 0));

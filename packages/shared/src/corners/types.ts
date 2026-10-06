@@ -70,7 +70,7 @@ const Point = z.tuple([z.int().min(0), z.int().min(0)]);
 /** The board and seating for one way of playing. */
 export const Variant = z.object({
   size: z.int().min(1),
-  /** Turn order. */
+  /** The colors in play, in turn order. The others take no turns and don't score. */
   colors: z.array(Color),
   /** The corner square each color must cover with its first piece. */
   corners: z.record(Color, Point),
@@ -86,32 +86,32 @@ const CLASSIC_CORNERS: Variant["corners"] = {
   green: [0, 19],
 };
 
-export const FOUR_PLAYER: Variant = {
-  size: 20,
-  colors: [...COLORS],
-  corners: CLASSIC_CORNERS,
-  seats: [["blue"], ["yellow"], ["red"], ["green"]],
+/**
+ * One color per player: the first `players` colors in turn order, so their
+ * starting corners run clockwise from (0, 0), next to each other.
+ */
+const onePerPlayer = (players: number): Variant => {
+  const colors = COLORS.slice(0, players);
+  return { size: 20, colors, corners: CLASSIC_CORNERS, seats: colors.map((c) => [c]) };
 };
 
-export const TWO_PLAYER: Variant = {
-  size: 20,
-  colors: [...COLORS],
-  corners: CLASSIC_CORNERS,
-  seats: [
-    ["blue", "red"],
-    ["yellow", "green"],
-  ],
-};
+export const TWO_PLAYER: Variant = onePerPlayer(2);
+export const THREE_PLAYER: Variant = onePerPlayer(3);
+export const FOUR_PLAYER: Variant = onePerPlayer(4);
 
 export const CornersState = z.object({
   variant: Variant,
   board: Board,
+  /** Each color's pieces in hand. Always empty for colors not in play. */
   remaining: z.record(Color, z.array(PieceId)),
   turn: Color,
   /** Consecutive passes. */
   passes: z.int().min(0),
   lastMove: z.object({ color: Color, move: Move }).nullable(),
-  /** The piece each color placed most recently, or null before its first. */
+  /**
+   * The piece each color placed most recently, or null before its first (and
+   * always for colors not in play).
+   */
   lastPlaced: z.record(Color, PieceId.nullable()),
 });
 export type CornersState = z.infer<typeof CornersState>;

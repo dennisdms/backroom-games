@@ -7,6 +7,7 @@ import {
   type CornersState,
   FOUR_PLAYER,
   type PieceId,
+  THREE_PLAYER,
   TWO_PLAYER,
 } from "./types";
 
@@ -58,12 +59,22 @@ describe("score", () => {
     expect(score(state).byColor.blue).toBe(20);
   });
 
-  it("sums each 2-player seat's two colors", () => {
-    let state = newGame(TWO_PLAYER);
+  it("leaves out the colors not in play", () => {
+    const state = allPlaced(newGame(TWO_PLAYER), "blue", "I1");
+    const { byColor, bySeat } = score(state);
+    expect(byColor).toEqual({ blue: 20, yellow: -89 });
+    expect(bySeat).toEqual([20, -89]);
+    expect(score(newGame(THREE_PLAYER)).bySeat).toEqual([-89, -89, -89]);
+  });
+
+  it("sums the colors a seat controls", () => {
+    const seats: Color[][] = [
+      ["blue", "red"],
+      ["yellow", "green"],
+    ];
+    let state = newGame({ ...FOUR_PLAYER, seats });
     state = allPlaced(state, "blue", "I1");
     state = allPlaced(state, "red", "X5");
-    const { byColor, bySeat } = score(state);
-    expect(byColor).toEqual({ blue: 20, yellow: -89, red: 15, green: -89 });
-    expect(bySeat).toEqual([35, -178]);
+    expect(score(state).bySeat).toEqual([35, -178]);
   });
 });

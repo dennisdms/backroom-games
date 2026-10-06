@@ -18,15 +18,29 @@ const roomFor = (game: CornersState, you: number, names: string[]): RoomState =>
     colors: game.variant.seats[seat] ?? [],
   })),
   host: 0,
-  playerCounts: [2, 4],
+  playerCounts: [2, 3, 4],
   you,
   game,
   version: 1,
 });
 
 describe("trayColor", () => {
+  it("is the seat's color with one color per player", () => {
+    const state = newGame(TWO_PLAYER);
+    expect(trayColor(state, 0)).toBe("blue");
+    expect(trayColor(state, 1)).toBe("yellow");
+    expect(trayColor({ ...state, turn: "yellow" }, 0)).toBe("blue");
+  });
+
   it("is the color to move when it's the seat's, else its next one", () => {
-    const state = newGame(TWO_PLAYER); // Blue to move; seat 0 has blue and red.
+    // Blue to move; seat 0 has blue and red.
+    const state = newGame({
+      ...FOUR_PLAYER,
+      seats: [
+        ["blue", "red"],
+        ["yellow", "green"],
+      ],
+    });
     expect(trayColor(state, 0)).toBe("blue");
     expect(trayColor(state, 1)).toBe("yellow");
     expect(trayColor({ ...state, turn: "yellow" }, 0)).toBe("red");
@@ -74,16 +88,14 @@ describe("standings", () => {
     ]);
   });
 
-  it("sums both colors of a two-player seat", () => {
+  it("only lists the seats playing, one color each", () => {
     const state = newGame(TWO_PLAYER);
     state.remaining.blue = ["I1"];
-    state.remaining.red = ["I2"];
     state.remaining.yellow = ["I3"];
-    state.remaining.green = ["I1"];
     const room = roomFor(state, 0, ["Ada", "Grace"]);
-    expect(standings(room, state).map((s) => [s.name, s.score, s.rank])).toEqual([
-      ["Ada", -3, 1],
-      ["Grace", -4, 2],
+    expect(standings(room, state)).toEqual([
+      { seat: 0, name: "Ada", colors: ["blue"], score: -1, rank: 1 },
+      { seat: 1, name: "Grace", colors: ["yellow"], score: -3, rank: 2 },
     ]);
   });
 });

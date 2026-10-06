@@ -8,6 +8,7 @@ import {
   newGame,
   rankByScore,
   score,
+  THREE_PLAYER,
   TWO_PLAYER,
   type Variant,
 } from "@backroom/shared";
@@ -18,6 +19,7 @@ import type { GameModule, MoveCheck, PlayerId } from "./types";
 
 const VARIANTS = new Map<number, Variant>([
   [2, TWO_PLAYER],
+  [3, THREE_PLAYER],
   [4, FOUR_PLAYER],
 ]);
 
@@ -31,7 +33,6 @@ const validate = (state: CornersState, player: PlayerId, move: Move): MoveCheck 
 
 export const corners: GameModule<CornersState, Move> = {
   id: "corners",
-  // Three players would need a shared fourth color, which the rules don't have.
   playerCounts: [...VARIANTS.keys()],
 
   init(players) {

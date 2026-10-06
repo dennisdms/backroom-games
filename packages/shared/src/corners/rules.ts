@@ -14,24 +14,28 @@ import {
 } from "./types";
 
 /**
- * A game before the first move: an empty board, every piece in hand, and the
- * first color in the variant's turn order to move. Seating (who controls which
- * colors) comes from `variant.seats`, so 2 and 4 players differ only by variant.
+ * A game before the first move: an empty board, every piece in hand for each
+ * color in play (none for the others), and the first color in the variant's
+ * turn order to move. Seating (who controls which colors) comes from
+ * `variant.seats`, so player counts differ only by variant.
  */
-export const newGame = (variant: Variant): CornersState => ({
-  variant,
-  board: Array.from({ length: variant.size * variant.size }, () => 0),
-  remaining: {
-    blue: [...PIECE_IDS],
-    yellow: [...PIECE_IDS],
-    red: [...PIECE_IDS],
-    green: [...PIECE_IDS],
-  },
-  turn: firstColor(variant),
-  passes: 0,
-  lastMove: null,
-  lastPlaced: { blue: null, yellow: null, red: null, green: null },
-});
+export const newGame = (variant: Variant): CornersState => {
+  const hand = (color: Color) => (variant.colors.includes(color) ? [...PIECE_IDS] : []);
+  return {
+    variant,
+    board: Array.from({ length: variant.size * variant.size }, () => 0),
+    remaining: {
+      blue: hand("blue"),
+      yellow: hand("yellow"),
+      red: hand("red"),
+      green: hand("green"),
+    },
+    turn: firstColor(variant),
+    passes: 0,
+    lastMove: null,
+    lastPlaced: { blue: null, yellow: null, red: null, green: null },
+  };
+};
 
 const firstColor = (variant: Variant) => {
   const [first] = variant.colors;
