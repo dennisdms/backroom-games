@@ -39,7 +39,7 @@ test("the host starts once a second player joins", async ({ context }) => {
 
   await host.getByRole("button", { name: "Start" }).click();
   for (const page of [host, guest]) {
-    await expect(page.getByTestId("game-placeholder")).toHaveText("The game has started.");
+    await expect(page.getByTestId("game")).toBeVisible();
   }
 });
 

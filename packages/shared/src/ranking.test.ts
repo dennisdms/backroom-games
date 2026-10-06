@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rankByScore } from "./types";
+import { rankByScore } from "./ranking";
 
 describe("rankByScore", () => {
   it("ranks highest first, ties share a rank and the next one skips", () => {

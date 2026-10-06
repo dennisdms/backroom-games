@@ -6,11 +6,12 @@ import {
   isGameOver,
   Move,
   newGame,
+  rankByScore,
   score,
   TWO_PLAYER,
   type Variant,
 } from "@backroom/shared";
-import { type GameModule, type MoveCheck, type PlayerId, rankByScore } from "./types";
+import type { GameModule, MoveCheck, PlayerId } from "./types";
 
 // Corners as a GameModule. Only wraps the rules in @backroom/shared: seats map
 // to colors through the variant, and the rules do the rest.

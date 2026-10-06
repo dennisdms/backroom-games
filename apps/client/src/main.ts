@@ -1,6 +1,8 @@
 import { CreateRoomRequest, MAX_NAME_LENGTH } from "@backroom/shared";
 import { html, render } from "lit-html";
 import { createRoom, getRoom } from "./api";
+import { type GameActions, gameTrayProps, newGameLocal } from "./games/corners/game";
+import { listenForTrayKeys } from "./games/corners/tray";
 import { normalizeCode, parseRoute, type Route, roomPath, withPlayer } from "./routes";
 import { newSession, receive, type Session } from "./session";
 import { type ConnectionStatus, connect } from "./socket";
@@ -32,6 +34,7 @@ const local: Forms = {
   error: null,
 };
 const lobbyLocal: LobbyLocal = newLobbyLocal();
+let gameLocal = newGameLocal();
 
 const root = document.getElementById("app");
 if (!root) throw new Error("missing #app element");
@@ -75,11 +78,30 @@ function page() {
       onSubmit: () => submitName(code),
     });
   }
-  return room(code, session, lobbyLocal, {
-    onCopy: () => copyLink(code),
-    onStart: () => socket.send({ type: "startGame" }),
-  });
+  return room(
+    code,
+    session,
+    { lobby: lobbyLocal, game: gameLocal },
+    {
+      onCopy: () => copyLink(code),
+      onStart: () => socket.send({ type: "startGame" }),
+      ...gameActions,
+    },
+  );
 }
+
+const gameActions: GameActions = {
+  onPlace: (placement) => socket.send({ type: "placePiece", ...placement }),
+  onPass: () => socket.send({ type: "pass" }),
+  onRematch: () => socket.send({ type: "rematch" }),
+  draw,
+};
+
+// Rotate and flip keys for the tray on screen, if any.
+listenForTrayKeys(() => {
+  const r = session?.room;
+  return r?.phase === "playing" && r.game ? gameTrayProps(r, r.game, gameLocal, gameActions) : null;
+});
 
 const statusText: Record<ConnectionStatus, string> = {
   connecting: "Connecting…",
@@ -217,7 +239,10 @@ const socket = connect({
     if (message.type === "welcome" && message.room.code === session.code) {
       storage.setToken(session.code, message.token);
     }
+    const before = session.room?.phase;
     session = receive(session, message);
+    // A new game (start or rematch) starts with nothing picked.
+    if (session.room?.phase !== before) gameLocal = newGameLocal();
     draw();
   },
 });

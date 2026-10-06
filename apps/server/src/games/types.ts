@@ -1,14 +1,11 @@
 // The plug-in point for games. Rooms and the WebSocket only ever talk to a
 // GameModule, so they stay the same for every game.
-import type { Player, RoomState } from "@backroom/shared";
+import type { Player, Ranking, RoomState } from "@backroom/shared";
 
 /** Games identify players by their room seat (0-based). */
 export type PlayerId = number;
 
 export type MoveCheck = { ok: true } | { ok: false; reason: string };
-
-/** Best first. Tied players share a rank, and the next rank skips: 1, 1, 3. */
-export type Ranking = { player: PlayerId; score: number; rank: number }[];
 
 /** A game's state as clients receive it in `RoomState.game`. */
 export type GameView = NonNullable<RoomState["game"]>;
@@ -46,14 +43,3 @@ export interface GameModule<State = unknown, Move = unknown> {
 
 /** The most players a game seats, which is how many seats its rooms get. */
 export const maxPlayers = (game: GameModule): number => Math.max(...game.playerCounts);
-
-/** Ranks players by score, highest first, with ties sharing a rank. */
-export const rankByScore = (scores: readonly number[]): Ranking => {
-  const sorted = scores
-    .map((score, player) => ({ player, score }))
-    .sort((a, b) => b.score - a.score || a.player - b.player);
-  return sorted.map((entry) => ({
-    ...entry,
-    rank: 1 + sorted.filter((other) => other.score > entry.score).length,
-  }));
-};

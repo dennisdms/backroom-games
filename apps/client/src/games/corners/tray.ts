@@ -39,7 +39,10 @@ export const newTrayLocal = (): TrayLocal => ({
 
 export type TrayProps = {
   state: CornersState;
-  /** The color this player places. The tray is disabled when it isn't its turn. */
+  /**
+   * The color this player places. When it isn't its turn, pieces can still be
+   * picked, turned and flipped, but not put on the board or confirmed.
+   */
   color: Color;
   local: TrayLocal;
   /** Redraws after `local` changes. */
@@ -143,7 +146,7 @@ export const listenForTrayKeys = (current: () => TrayProps | null) => {
   const onKeyDown = (event: KeyboardEvent) => {
     const props = current();
     const action = keyAction(event);
-    if (!props || !action || isTyping(event.target) || !isTurn(props)) return;
+    if (!props || !action || isTyping(event.target)) return;
     if (act(props.local, action)) {
       event.preventDefault();
       props.draw();
@@ -180,9 +183,10 @@ export const cornersTray = (props: TrayProps) => {
   const { size } = state.variant;
   const turn = isTurn(props);
   const remaining = state.remaining[color];
-  // The picked piece, unless it was played since or it's not our turn.
-  const piece = turn && local.piece && remaining.includes(local.piece) ? local.piece : null;
-  const anchor = local.pinned ?? local.hover;
+  // The picked piece, unless it was played since.
+  const piece = local.piece && remaining.includes(local.piece) ? local.piece : null;
+  // The ghost only goes on the board on our turn.
+  const anchor = turn ? (local.pinned ?? local.hover) : null;
   const placement = piece && anchor ? ghostPlacement(piece, local.orientation, anchor, size) : null;
   const check = placement ? checkMove(state, color, { kind: "place", ...placement }) : null;
   const overlay: BoardOverlay | undefined =
@@ -192,8 +196,8 @@ export const cornersTray = (props: TrayProps) => {
   const ready = local.pinned !== null && placement !== null && check?.ok === true;
 
   const status = (() => {
-    if (!turn) return `Waiting for ${state.turn}.`;
     if (remaining.length === 0) return "You've placed all your pieces.";
+    if (!turn) return piece ? "You can place it on your turn." : "Not your turn yet.";
     if (!piece) return "Pick a piece.";
     if (!check) return "Tap or click the board to place it.";
     if (!check.ok) return reasonText[check.reason];
@@ -210,16 +214,16 @@ export const cornersTray = (props: TrayProps) => {
     const square = squareFrom(event);
     if (sameSquare(square, local.hover)) return;
     local.hover = square;
-    if (piece && !local.pinned) draw();
+    if (turn && piece && !local.pinned) draw();
   };
   const onPointerLeave = () => {
     if (!local.hover) return;
     local.hover = null;
-    if (piece && !local.pinned) draw();
+    if (turn && piece && !local.pinned) draw();
   };
   const onBoardClick = (event: MouseEvent) => {
     const square = squareFrom(event);
-    if (!piece || !square) return;
+    if (!turn || !piece || !square) return;
     local.pinned = square;
     draw();
   };
@@ -235,7 +239,7 @@ export const cornersTray = (props: TrayProps) => {
 
   return html`<div class="corners-play">
     <div
-      class="corners-play-board ${piece ? "placing" : ""}"
+      class="corners-play-board ${turn && piece ? "placing" : ""}"
       @pointermove=${onPointerMove}
       @pointerleave=${onPointerLeave}
       @click=${onBoardClick}
@@ -264,7 +268,7 @@ export const cornersTray = (props: TrayProps) => {
         ⟳ <span class="label">Rotate</span>
       </button>
       <button ?disabled=${!piece} @click=${run("flip")} title="Flip (F)">⇋ Flip</button>
-      <button ?disabled=${!local.pinned || !piece} @click=${run("undo")}>Undo</button>
+      <button ?disabled=${!turn || !local.pinned || !piece} @click=${run("undo")}>Undo</button>
       <button class="primary" ?disabled=${!ready} @click=${confirm}>Confirm</button>
     </div>
     <div class="corners-tray" role="group" aria-label="Your pieces">
@@ -273,7 +277,6 @@ export const cornersTray = (props: TrayProps) => {
           class="tray-piece"
           aria-label=${id}
           aria-pressed=${id === piece ? "true" : "false"}
-          ?disabled=${!turn}
           @click=${() => {
             select(local, id);
             draw();
