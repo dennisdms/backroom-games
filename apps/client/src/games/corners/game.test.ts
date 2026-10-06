@@ -6,7 +6,18 @@ import {
   TWO_PLAYER,
 } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { ordinal, resultText, standings, trayColor, turnText } from "./game";
+import {
+  gameTrayProps,
+  newGameLocal,
+  ordinal,
+  resultText,
+  standings,
+  trayColor,
+  turnCameToYou,
+  turnText,
+  viewedHand,
+  viewSeat,
+} from "./game";
 
 const roomFor = (game: CornersState, you: number, names: string[]): RoomState => ({
   code: "K7QXM",
@@ -125,5 +136,61 @@ describe("resultText", () => {
 describe("ordinal", () => {
   it("covers four seats", () => {
     expect([1, 2, 3, 4].map(ordinal)).toEqual(["1st", "2nd", "3rd", "4th"]);
+  });
+});
+
+describe("viewedHand", () => {
+  const state = newGame(TWO_PLAYER);
+  state.remaining.yellow = ["I1", "I3"];
+  const room = roomFor(state, 0, ["Ada", "Grace"]);
+  const actions = { onPlace: () => {}, onPass: () => {}, onRematch: () => {}, draw: () => {} };
+
+  it("is null while you look at your own pieces", () => {
+    const l = newGameLocal();
+    expect(viewedHand(room, state, l)).toBeNull();
+    viewSeat(room, l, 0);
+    expect(l.viewing).toBeNull();
+    expect(viewedHand(room, state, l)).toBeNull();
+  });
+
+  it("lists another seat's remaining pieces in place of your tray", () => {
+    const l = newGameLocal();
+    viewSeat(room, l, 1);
+    expect(viewedHand(room, state, l)).toEqual({
+      seat: 1,
+      name: "Grace",
+      pieces: [
+        { color: "yellow", id: "I1" },
+        { color: "yellow", id: "I3" },
+      ],
+    });
+    expect(gameTrayProps(room, state, l, actions)).toBeNull();
+    viewSeat(room, l, 0);
+    expect(gameTrayProps(room, state, l, actions)?.color).toBe("blue");
+  });
+
+  it("is null for a seat that isn't playing", () => {
+    const l = newGameLocal();
+    viewSeat(room, l, 3);
+    expect(viewedHand(room, state, l)).toBeNull();
+  });
+});
+
+describe("turnCameToYou", () => {
+  const blue = newGame(TWO_PLAYER);
+  const yellow = { ...blue, turn: "yellow" as const };
+  const names = ["Ada", "Grace"];
+
+  it("is true only when the turn moves to your color", () => {
+    expect(turnCameToYou(roomFor(yellow, 0, names), roomFor(blue, 0, names))).toBe(true);
+    expect(turnCameToYou(roomFor(blue, 0, names), roomFor(blue, 0, names))).toBe(false);
+    expect(turnCameToYou(roomFor(blue, 0, names), roomFor(yellow, 0, names))).toBe(false);
+    expect(turnCameToYou(roomFor(blue, 1, names), roomFor(yellow, 1, names))).toBe(true);
+  });
+
+  it("ignores rooms that aren't being played", () => {
+    expect(turnCameToYou(undefined, roomFor(blue, 0, names))).toBe(true);
+    const over = { ...roomFor(blue, 0, names), phase: "finished" as const };
+    expect(turnCameToYou(roomFor(yellow, 0, names), over)).toBe(false);
   });
 });

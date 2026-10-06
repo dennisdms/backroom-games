@@ -312,7 +312,7 @@ export const cornersTray = (props: TrayProps) => {
 const keyCap = (key: string) => html`<kbd class="key-cap" aria-hidden="true">${key}</kbd>`;
 
 /** A piece's base shape, centered in a 5×5 box so pieces keep their relative size. */
-const pieceIcon = (id: PieceId, color: Color) => {
+export const pieceIcon = (id: PieceId, color: Color) => {
   const shape = PIECES[id];
   const dx = (5 - (Math.max(...shape.map(([x]) => x)) + 1)) / 2;
   const dy = (5 - (Math.max(...shape.map(([, y]) => y)) + 1)) / 2;
