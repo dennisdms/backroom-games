@@ -1,14 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
-
-const createRoom = async (page: Page, name: string) => {
-  await page.goto("/");
-  await page.getByLabel("Your name").fill(name);
-  await page.getByRole("button", { name: "Create room" }).click();
-  await expect(page).toHaveURL(/\/r\/[A-Z0-9]{5}$/);
-  return new URL(page.url()).pathname.split("/").pop() ?? "";
-};
-
-const seats = (page: Page) => page.getByTestId("seats").getByRole("listitem");
+import { expect, test } from "@playwright/test";
+import { createRoom, seats } from "./helpers";
 
 test("the host starts once a second player joins", async ({ context }) => {
   const host = await context.newPage();

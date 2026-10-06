@@ -1,30 +1,31 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { createRoom, place, seats, square } from "./helpers";
 
-const square = (page: Page, x: number, y: number) =>
-  page.locator(`.corners-board rect.square[data-x="${x}"][data-y="${y}"]`);
+// Separate browser contexts share no storage, like two players on two devices.
+test("two players join by code and take turns placing pieces", async ({ browser }) => {
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
 
-/** Places a piece through the tray: pick it, click a board square, confirm. */
-const place = async (page: Page, pieceId: string, x: number, y: number) => {
-  await page.getByRole("button", { name: pieceId, exact: true }).click();
-  await square(page, x, y).click();
-  await page.getByRole("button", { name: "Confirm" }).click();
-};
+  const code = await createRoom(host, "Ada");
+  await expect(host.getByTestId("room-code")).toHaveText(code);
 
-test("two players take turns placing pieces", async ({ context }) => {
-  const host = await context.newPage();
-  await host.goto("/");
-  await host.getByLabel("Your name").fill("Ada");
-  await host.getByRole("button", { name: "Create room" }).click();
-  await expect(host).toHaveURL(/\/r\/[A-Z0-9]{5}$/);
-  const code = new URL(host.url()).pathname.split("/").pop() ?? "";
-
-  const guest = await context.newPage();
-  await guest.goto(`/r/${code}?player=2`);
+  await guest.goto("/");
+  await guest.getByLabel("Room code").fill(code);
+  await guest.getByRole("button", { name: "Join room" }).click();
+  await expect(guest).toHaveURL(`/r/${code}`);
   await guest.getByLabel("Your name").fill("Grace");
   await guest.getByRole("button", { name: "Join", exact: true }).click();
-  await expect(host.getByTestId("seats").getByRole("listitem")).toHaveCount(2);
+  for (const page of [host, guest]) {
+    await expect(seats(page)).toHaveCount(2);
+  }
+  await expect(seats(guest).nth(1)).toContainText(/Grace\s*\(you\)/);
   await host.getByRole("button", { name: "Start" }).click();
 
+  for (const page of [host, guest]) {
+    await expect(page.getByTestId("game")).toBeVisible();
+  }
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
   await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
   // Off turn, pieces can be picked but not played.
@@ -46,9 +47,15 @@ test("two players take turns placing pieces", async ({ context }) => {
   // Yellow's domino, picked while waiting, on its corner, top right.
   await square(guest, 19, 0).click();
   await guest.getByRole("button", { name: "Confirm" }).click();
-  for (const x of [18, 19]) {
-    await expect(square(host, x, 0)).toHaveAttribute("fill", "var(--color-yellow)");
+  for (const page of [host, guest]) {
+    for (const x of [18, 19]) {
+      await expect(square(page, x, 0)).toHaveAttribute("fill", "var(--color-yellow)");
+    }
   }
   // Ada plays red next, the second of her colors.
   await expect(host.getByTestId("turn")).toHaveText("Your turn (red)");
+  await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (red)");
+
+  await hostContext.close();
+  await guestContext.close();
 });
