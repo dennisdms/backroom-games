@@ -32,6 +32,8 @@ const room: RoomState = {
     online: true,
     colors: [color],
   })),
+  host: 0,
+  playerCounts: [2, 4],
   you: 0,
   game,
   version: 3,

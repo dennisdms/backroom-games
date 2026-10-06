@@ -60,4 +60,6 @@ export const corners: GameModule<CornersState, Move> = {
 
   // Nothing is hidden in Corners.
   view: (state) => state,
+
+  colors: (state, player) => state.variant.seats[player] ?? [],
 };

@@ -1,4 +1,4 @@
-import { applyMove, isGameOver, type Placement } from "@backroom/shared";
+import { applyMove, isGameOver, type Placement, type RoomState } from "@backroom/shared";
 import { html, nothing, render } from "lit-html";
 import { ref } from "lit-html/directives/ref.js";
 import { exampleState } from "../games/corners/example";
@@ -8,13 +8,25 @@ import {
   newTrayLocal,
   type TrayProps,
 } from "../games/corners/tray";
+import type { Session } from "../session";
 
 // TODO: lobby (#17), and game and results (#20).
-export const room = (code: string) => html`
+export const room = (code: string, session: Session | null) => html`
   <h1>Room ${code}</h1>
-  <p class="muted">Rooms aren't implemented yet.</p>
+  ${session?.error ? html`<p role="alert">${session.error}</p>` : nothing}
+  ${session?.room ? players(session.room) : html`<p class="muted">Joining…</p>`}
   ${import.meta.env.DEV ? preview() : nothing}
   <p><a href="/">Back</a></p>
+`;
+
+/** Who's in the room, until the lobby (#17) shows it properly. */
+const players = (room: RoomState) => html`
+  <p data-testid="players">
+    Players:
+    ${room.players
+      .map((p) => `${p.name}${p.seat === room.you ? " (you)" : ""}${p.online ? "" : " (offline)"}`)
+      .join(", ")}
+  </p>
 `;
 
 // Dev-only until rooms can play (#20): a hard-coded game to try the tray on,

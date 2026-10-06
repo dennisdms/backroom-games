@@ -11,6 +11,7 @@ export const Player = z.object({
   seat: Seat,
   name: z.string(),
   online: z.boolean(),
+  /** The colors this player plays. In the lobby, the ones they'd get if the game started now. */
   colors: z.array(Color),
 });
 export type Player = z.infer<typeof Player>;
@@ -20,6 +21,10 @@ export const RoomState = z.object({
   code: z.string(),
   phase: z.enum(["lobby", "playing", "finished"]),
   players: z.array(Player),
+  /** The seat of the host, who starts the game and rematches. */
+  host: Seat,
+  /** The player counts the game can start with, ascending. */
+  playerCounts: z.array(z.int().min(1)),
   /** The receiving player's seat. */
   you: Seat,
   /** Null in the lobby. */

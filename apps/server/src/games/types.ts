@@ -1,5 +1,6 @@
 // The plug-in point for games. Rooms and the WebSocket only ever talk to a
 // GameModule, so they stay the same for every game.
+import type { Player, RoomState } from "@backroom/shared";
 
 /** Games identify players by their room seat (0-based). */
 export type PlayerId = number;
@@ -8,6 +9,12 @@ export type MoveCheck = { ok: true } | { ok: false; reason: string };
 
 /** Best first. Tied players share a rank, and the next rank skips: 1, 1, 3. */
 export type Ranking = { player: PlayerId; score: number; rank: number }[];
+
+/** A game's state as clients receive it in `RoomState.game`. */
+export type GameView = NonNullable<RoomState["game"]>;
+
+/** The colors a player plays as, shown next to their name. */
+export type PlayerColors = Player["colors"];
 
 /**
  * One game. Every function is pure: the server stores the returned state as
@@ -32,7 +39,9 @@ export interface GameModule<State = unknown, Move = unknown> {
   /** The standings so far; final once `isOver`. */
   result(state: State): Ranking;
   /** What `player` may see, for games with hidden information. */
-  view(state: State, player: PlayerId): unknown;
+  view(state: State, player: PlayerId): GameView;
+  /** The colors `player` plays as in this game. */
+  colors(state: State, player: PlayerId): PlayerColors;
 }
 
 /** The most players a game seats, which is how many seats its rooms get. */

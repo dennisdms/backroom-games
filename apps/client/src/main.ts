@@ -2,6 +2,7 @@ import { CreateRoomRequest, MAX_NAME_LENGTH } from "@backroom/shared";
 import { html, render } from "lit-html";
 import { createRoom, getRoom } from "./api";
 import { normalizeCode, parseRoute, type Route, roomPath, withPlayer } from "./routes";
+import { newSession, receive, type Session } from "./session";
 import { type ConnectionStatus, connect } from "./socket";
 import { browserStore, playerFromSearch, playerStorage } from "./storage";
 import "./styles/main.css";
@@ -18,6 +19,10 @@ const storage = playerStorage(browserStore(), player);
 
 let route: Route = parseRoute(location.pathname);
 let connection: ConnectionStatus = "connecting";
+/** The room page's seat and state, from the server. Null on other pages. */
+let session: Session | null = null;
+/** The room `hello` went to on the current connection. */
+let helloSent: string | null = null;
 
 const local: Forms = {
   name: storage.lastName() ?? "",
@@ -54,7 +59,7 @@ function page() {
     });
   }
   // A seat comes from creating the room (token) or from the name prompt
-  // (name, until #14 trades it for a token over the WebSocket).
+  // (name, which `hello` trades for a token).
   const code = route.code;
   if (storage.token(code) === null && storage.name(code) === null) {
     return namePrompt(code, local, {
@@ -64,7 +69,7 @@ function page() {
       onSubmit: () => submitName(code),
     });
   }
-  return room(code);
+  return room(code, session);
 }
 
 const statusText: Record<ConnectionStatus, string> = {
@@ -78,11 +83,13 @@ function navigate(path: string) {
   route = parseRoute(location.pathname);
   local.pending = null;
   local.error = null;
+  sync();
   draw();
 }
 
 window.addEventListener("popstate", () => {
   route = parseRoute(location.pathname);
+  sync();
   draw();
 });
 
@@ -139,20 +146,53 @@ async function submitName(code: string) {
   const result = await getRoom(code);
   if (!result.ok) return fail("name", result.error);
   storage.setName(code, name.data);
-  // TODO(#14): send `hello` with this name, and with storage.token(code) when
-  // there is one, then store the token from `welcome` with storage.setToken.
   local.pending = null;
+  sync();
   draw();
 }
 
-connect({
+/**
+ * Takes this player's seat in the room on screen: sends `hello` once per
+ * connection with the stored token, or the name to get one.
+ */
+function sync() {
+  if (route.name !== "room") {
+    session = null;
+    return;
+  }
+  const { code } = route;
+  if (session?.code !== code) session = newSession(code);
+  const token = storage.token(code);
+  const name = storage.name(code);
+  if ((token === null && name === null) || helloSent === code) return;
+  const sent = socket.send({
+    type: "hello",
+    code,
+    // Ignored for a known token, but required.
+    name: name ?? storage.lastName() ?? "Player",
+    ...(token !== null && { token }),
+  });
+  if (sent) helloSent = code;
+}
+
+const socket = connect({
   onStatus: (status) => {
     connection = status;
     draw();
   },
-  onMessage: () => {
-    // Nothing yet besides pong. Room state messages will update state here.
+  onOpen: () => {
+    helloSent = null;
+    sync();
+  },
+  onMessage: (message) => {
+    if (!session) return;
+    if (message.type === "welcome" && message.room.code === session.code) {
+      storage.setToken(session.code, message.token);
+    }
+    session = receive(session, message);
+    draw();
   },
 });
 
+sync();
 draw();
