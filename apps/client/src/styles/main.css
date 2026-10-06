@@ -101,10 +101,6 @@ footer {
   pointer-events: none;
 }
 
-.corners-board .start.covered {
-  opacity: 0.8;
-}
-
 .corners-board .last-move {
   fill: none;
   stroke: var(--fg);
@@ -128,11 +124,6 @@ footer {
   fill-opacity: 0.75;
   stroke: var(--muted);
   stroke-dasharray: 4 3;
-}
-
-.corners-board .candidates {
-  opacity: 0.45;
-  pointer-events: none;
 }
 
 /* Corners tray (games/corners/tray.ts): the controls and remaining pieces

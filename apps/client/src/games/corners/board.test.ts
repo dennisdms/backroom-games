@@ -1,5 +1,19 @@
+import { applyMove, newGame, TWO_PLAYER } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { outlinePath, squareAt } from "./board";
+import { outlinePath, squareAt, startCorners } from "./board";
+
+describe("startCorners", () => {
+  it("lists each color's corner until its first piece covers it", () => {
+    const state = newGame(TWO_PLAYER);
+    expect(startCorners(state)).toEqual([
+      { color: "blue", square: TWO_PLAYER.corners.blue },
+      { color: "yellow", square: TWO_PLAYER.corners.yellow },
+    ]);
+    const [x, y] = TWO_PLAYER.corners.blue;
+    const next = applyMove(state, { kind: "place", pieceId: "I1", orientation: 0, x, y });
+    expect(startCorners(next)).toEqual([{ color: "yellow", square: TWO_PLAYER.corners.yellow }]);
+  });
+});
 
 describe("outlinePath", () => {
   it("traces all four sides of a single square", () => {

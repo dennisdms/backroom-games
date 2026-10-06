@@ -1,5 +1,5 @@
 // Corners UI: the SVG board. The piece tray (tray.ts) draws the piece being
-// placed on top of it through `overlay`, and where it could go via `candidates`.
+// placed on top of it through `overlay`.
 import {
   COLORS,
   type Color,
@@ -17,12 +17,14 @@ export type BoardOverlay = {
   invalid?: boolean;
 };
 
-/** Squares marked as places where a color's next piece could go. */
-export type BoardCandidates = { squares: readonly Square[]; color: Color };
+export type BoardOptions = { overlay?: BoardOverlay | undefined };
 
-export type BoardOptions = {
-  overlay?: BoardOverlay | undefined;
-  candidates?: BoardCandidates | undefined;
+/** The colors in play whose starting corner is still empty, with that corner. */
+export const startCorners = (state: CornersState): { color: Color; square: Square }[] => {
+  const { size, corners } = state.variant;
+  return state.variant.colors
+    .map((color) => ({ color, square: corners[color] }))
+    .filter(({ square: [x, y] }) => state.board[y * size + x] === 0);
 };
 
 /**
@@ -30,8 +32,8 @@ export type BoardOptions = {
  * so square (x, y) sits at x..x+1, y..y+1, and each square carries `data-x` and
  * `data-y`. `squareAt` maps a pointer position back to a square.
  */
-export const cornersBoard = (state: CornersState, { overlay, candidates }: BoardOptions = {}) => {
-  const { size, corners } = state.variant;
+export const cornersBoard = (state: CornersState, { overlay }: BoardOptions = {}) => {
+  const { size } = state.variant;
   const lastSquares =
     state.lastMove?.move.kind === "place" ? placementSquares(state.lastMove.move) : null;
 
@@ -56,28 +58,16 @@ export const cornersBoard = (state: CornersState, { overlay, candidates }: Board
         fill=${color ? `var(--color-${color})` : "var(--board-empty)"}
       />`;
     })}
-    ${state.variant.colors.map((color) => {
-      // A dot in the color while empty, a small light dot once covered.
-      const [x, y] = corners[color];
-      const covered = state.board[y * size + x] !== 0;
-      return svg`<circle
-        class="start ${covered ? "covered" : ""}"
+    ${startCorners(state).map(
+      ({ color, square: [x, y] }) => svg`<circle
+        class="start"
         data-color=${color}
         cx=${x + 0.5}
         cy=${y + 0.5}
-        r=${covered ? 0.12 : 0.3}
-        fill=${covered ? "var(--bg)" : `var(--color-${color})`}
-      />`;
-    })}
-    ${
-      candidates
-        ? svg`<g class="candidates" fill="var(--color-${candidates.color})">
-          ${candidates.squares.map(
-            ([x, y]) => svg`<rect x=${x + 0.3} y=${y + 0.3} width="0.4" height="0.4" rx="0.1" />`,
-          )}
-        </g>`
-        : nothing
-    }
+        r="0.3"
+        fill="var(--color-${color})"
+      />`,
+    )}
     ${lastSquares ? svg`<path class="last-move" d=${outlinePath(lastSquares)} />` : nothing}
     ${
       overlay

@@ -28,6 +28,9 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   }
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
   await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
+  // Only the colors in play get a starting corner dot, and nothing else is marked.
+  await expect(host.locator("circle.start")).toHaveCount(2);
+  await expect(host.locator(".corners-board .candidates")).toHaveCount(0);
   // Off turn, pieces can be picked but not played.
   await guest.getByRole("button", { name: "I2", exact: true }).click();
   await square(guest, 19, 0).click();
@@ -47,6 +50,9 @@ test("two players join by code and take turns placing pieces", async ({ browser 
     await expect(square(page, 0, 0)).toHaveAttribute("fill", "var(--color-blue)");
   }
   await expect(guest.getByTestId("turn")).toHaveText("Your turn (yellow)");
+  // Blue's dot is gone once its corner is covered; yellow's is still there.
+  await expect(guest.locator("circle.start")).toHaveCount(1);
+  await expect(guest.locator('circle.start[data-color="yellow"]')).toHaveCount(1);
   await expect(host.getByTestId("turn")).toHaveText("Grace's turn (yellow)");
   const scores = guest.getByTestId("scores").getByRole("listitem");
   await expect(scores.nth(0)).toContainText("Ada");
@@ -63,8 +69,8 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   // With one color each, it's back to Ada's blue.
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
   await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
-  // Only the colors in play get a starting corner.
-  await expect(host.locator("circle.start")).toHaveCount(2);
+  // Both corners are covered, so no dots are left.
+  await expect(host.locator("circle.start")).toHaveCount(0);
 
   await hostContext.close();
   await guestContext.close();
