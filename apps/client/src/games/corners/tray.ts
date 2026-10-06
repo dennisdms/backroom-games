@@ -54,8 +54,9 @@ export type TrayProps = {
 export type TrayAction = "rotate-cw" | "rotate-ccw" | "flip" | "undo" | "cancel";
 
 /**
- * Where a piece goes when `anchor` is the square under the pointer: centered
- * on it (rounding up and left), then shifted to stay on a `size` board.
+ * Where a piece goes when `anchor` is the square under the pointer: the top
+ * left of the piece's bounding box goes on it, so pointing at a board corner
+ * puts the piece in that corner. Then shifted to stay on a `size` board.
  */
 export const ghostPlacement = (
   pieceId: PieceId,
@@ -70,8 +71,8 @@ export const ghostPlacement = (
   return {
     pieceId,
     orientation: ORIENTATIONS[pieceId][orientation] ? orientation : 0,
-    x: clamp(ax - Math.floor((width - 1) / 2), width),
-    y: clamp(ay - Math.floor((height - 1) / 2), height),
+    x: clamp(ax, width),
+    y: clamp(ay, height),
   };
 };
 
