@@ -56,6 +56,10 @@ test("two players join by code and take turns placing pieces", async ({ browser 
     await expect(square(page, 0, 0)).toHaveAttribute("fill", "var(--color-blue)");
   }
   await expect(guest.getByTestId("turn")).toHaveText("Your turn (yellow)");
+  // The played piece stays in its slot, grayed out and disabled.
+  await expect(host.getByRole("button", { name: "I1", exact: true })).toBeDisabled();
+  await expect(rows).toHaveCount(5);
+  await expect(rows.getByRole("button")).toHaveCount(21);
   // Blue's dot is gone once its corner is covered; yellow's is still there.
   await expect(guest.locator("circle.start")).toHaveCount(1);
   await expect(guest.locator('circle.start[data-color="yellow"]')).toHaveCount(1);
@@ -72,8 +76,12 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   await expect(player(guest, "Ada")).toHaveAttribute("aria-pressed", "true");
   const adaHand = guest.getByTestId("hand");
   await expect(adaHand).toContainText("Ada's pieces (20)");
-  await expect(adaHand.locator(".tray-piece")).toHaveCount(20);
-  await expect(adaHand.locator('[data-piece="I1"]')).toHaveCount(0);
+  await expect(adaHand.locator(".tray-piece")).toHaveCount(21);
+  await expect(adaHand.locator(".tray-piece.played")).toHaveCount(1);
+  await expect(adaHand.locator('[data-piece="I1"]')).toHaveClass(/played/);
+  await expect(adaHand.getByRole("group", { name: "Ada's pieces" }).getByRole("group")).toHaveCount(
+    5,
+  );
   await expect(guest.getByRole("button", { name: "I2", exact: true })).toHaveCount(0);
   await guest.getByRole("button", { name: "Back to your pieces" }).click();
   await expect(guest.getByTestId("hand")).toHaveCount(0);
@@ -98,7 +106,7 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
   // On their turn, the host's own tray comes back.
   await expect(host.getByTestId("hand")).toHaveCount(0);
-  await expect(host.getByRole("button", { name: "I1", exact: true })).toHaveCount(0);
+  await expect(host.getByRole("button", { name: "I1", exact: true })).toBeDisabled();
   await expect(host.getByRole("button", { name: "I2", exact: true })).toBeVisible();
   // Both corners are covered, so no dots are left.
   await expect(host.locator("circle.start")).toHaveCount(0);

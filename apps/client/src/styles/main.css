@@ -16,6 +16,8 @@
   --board-empty: #e6e2d8;
   --board-line: #c9c4b8;
   --ghost-illegal: #8e8e93;
+  /* A piece already played, still in its tray slot */
+  --piece-played: #c2bcb0;
 
   font-family: system-ui, sans-serif;
   line-height: 1.5;
@@ -29,6 +31,7 @@
     --board-empty: #26262b;
     --board-line: #3a3a41;
     --ghost-illegal: #6e6e76;
+    --piece-played: #3f3f46;
   }
 }
 
@@ -216,6 +219,20 @@ footer {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
   gap: 0.375rem;
+}
+
+/* Played pieces keep their slot, grayed out, so the tray never shifts. */
+.tray-piece.played svg {
+  fill: var(--piece-played);
+}
+
+.corners-play .tray-piece.played:disabled {
+  opacity: 1;
+  border-style: dashed;
+}
+
+.hand .tray-piece.played {
+  border-style: dashed;
 }
 
 .corners-play .tray-piece {

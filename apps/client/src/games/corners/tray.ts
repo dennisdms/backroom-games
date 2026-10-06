@@ -1,4 +1,4 @@
-// Corners UI: playing a piece. The tray of remaining pieces, the rotate and
+// Corners UI: playing a piece. The tray of pieces (played ones grayed out), the rotate and
 // flip controls, and the ghost of the piece on the board. Clicking the board
 // plays the piece there; on touch, the first tap previews it.
 import {
@@ -8,6 +8,7 @@ import {
   flipOrientation,
   type IllegalReason,
   ORIENTATIONS,
+  PIECE_IDS,
   PIECES,
   type PieceId,
   type Placement,
@@ -15,7 +16,7 @@ import {
   rotateOrientation,
   type Square,
 } from "@backroom/shared";
-import { html, nothing, svg, type TemplateResult } from "lit-html";
+import { html, svg, type TemplateResult } from "lit-html";
 import { type BoardOverlay, cornersBoard, squareAt } from "./board";
 
 /** The tray's UI-only state. Whoever shows the tray owns it and passes it in. */
@@ -291,11 +292,13 @@ export const cornersTray = (props: TrayProps) => {
     </div>
     ${pieceGrid(
       "Your pieces",
-      remaining.map((id) => ({ id, color })),
-      ({ id }) => html`<button
-        class="tray-piece"
+      handPieces(state, [color]),
+      ({ id, played }) => html`<button
+        class="tray-piece ${played ? "played" : ""}"
         aria-label=${id}
         aria-pressed=${id === piece ? "true" : "false"}
+        title=${played ? `${id}, played` : id}
+        ?disabled=${played}
         @click=${() => {
           select(local, id);
           draw();
@@ -304,7 +307,6 @@ export const cornersTray = (props: TrayProps) => {
         ${pieceIcon(id, color)}
       </button>`,
     )}
-    ${remaining.length === 0 ? html`<p class="muted">No pieces left.</p>` : nothing}
   </div>`;
 };
 
@@ -321,7 +323,18 @@ export const pieceIcon = (id: PieceId, color: Color) => {
   </svg>`;
 };
 
-export type GridPiece = { id: PieceId; color: Color };
+export type GridPiece = { id: PieceId; color: Color; played: boolean };
+
+/**
+ * Every piece of `colors`, color by color, with the ones already played
+ * marked, so a tray keeps its layout all game.
+ */
+export const handPieces = (state: CornersState, colors: readonly Color[]): GridPiece[] =>
+  colors.flatMap((color) =>
+    state.variant.colors.includes(color)
+      ? PIECE_IDS.map((id) => ({ id, color, played: !state.remaining[color].includes(id) }))
+      : [],
+  );
 
 /** Pieces in rows by square count, smallest first, keeping their order within a row. */
 export const bySize = <T extends GridPiece>(pieces: readonly T[]) => {
