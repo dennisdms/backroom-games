@@ -31,6 +31,12 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   // Only the colors in play get a starting corner dot, and nothing else is marked.
   await expect(host.locator("circle.start")).toHaveCount(2);
   await expect(host.locator(".corners-board .candidates")).toHaveCount(0);
+  // The tray has a row per piece size, smallest first.
+  const rows = host.getByRole("group", { name: "Your pieces" }).getByRole("group");
+  await expect(rows).toHaveCount(5);
+  await expect(rows.first()).toHaveAccessibleName("1 square");
+  await expect(rows.last()).toHaveAccessibleName("5 squares");
+  await expect(rows.last().getByRole("button")).toHaveCount(12);
   // Off turn, pieces can be picked but not played.
   await guest.getByRole("button", { name: "I2", exact: true }).click();
   await square(guest, 19, 0).click();

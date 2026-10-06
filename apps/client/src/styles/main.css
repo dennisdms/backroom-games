@@ -190,11 +190,32 @@ footer {
   cursor: default;
 }
 
+/* Pieces in rows by size, each with its square count on the left. Shared by
+   your tray and another player's hand. */
 .corners-tray {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tray-row {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.tray-size {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.tray-pieces {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
   gap: 0.375rem;
-  margin-top: 1rem;
 }
 
 .corners-play .tray-piece {
@@ -488,11 +509,6 @@ footer {
   background: var(--bg);
   color: var(--fg);
   cursor: pointer;
-}
-
-.hand .corners-tray {
-  list-style: none;
-  padding: 0;
 }
 
 .hand .tray-piece {
