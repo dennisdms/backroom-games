@@ -1,4 +1,5 @@
 import {
+  FOUR_PLAYER,
   flipOrientation,
   newGame,
   PIECE_IDS,
@@ -7,7 +8,15 @@ import {
   TWO_PLAYER,
 } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { act, bySize, ghostPlacement, keyAction, newTrayLocal, pressBoard } from "./tray";
+import {
+  act,
+  bySize,
+  ghostPlacement,
+  handPieces,
+  keyAction,
+  newTrayLocal,
+  pressBoard,
+} from "./tray";
 
 describe("ghostPlacement", () => {
   it("puts the top left of the piece on the anchor", () => {
@@ -130,7 +139,7 @@ describe("pressBoard", () => {
 });
 
 describe("bySize", () => {
-  const all = PIECE_IDS.map((id) => ({ id, color: "blue" as const }));
+  const all = PIECE_IDS.map((id) => ({ id, color: "blue" as const, played: false }));
 
   it("puts a full hand in five rows, one per square count", () => {
     const rows = bySize(all);
@@ -142,13 +151,31 @@ describe("bySize", () => {
 
   it("leaves out sizes with no pieces and keeps the order within a row", () => {
     const pieces = [
-      { id: "X5", color: "red" },
-      { id: "I1", color: "blue" },
-      { id: "F5", color: "blue" },
+      { id: "X5", color: "red", played: false },
+      { id: "I1", color: "blue", played: true },
+      { id: "F5", color: "blue", played: false },
     ] as const;
     expect(bySize(pieces)).toEqual([
       { size: 1, pieces: [pieces[1]] },
       { size: 5, pieces: [pieces[0], pieces[2]] },
     ]);
+  });
+});
+
+describe("handPieces", () => {
+  it("lists every piece of each color, with the played ones marked", () => {
+    const state = newGame(FOUR_PLAYER);
+    state.remaining.blue = state.remaining.blue.filter((id) => id !== "I1" && id !== "X5");
+    const pieces = handPieces(state, ["blue", "red"]);
+    expect(pieces).toHaveLength(42);
+    expect(pieces.slice(0, 21).map((p) => p.color)).toEqual(Array(21).fill("blue"));
+    expect(pieces.filter((p) => p.played)).toEqual([
+      { id: "I1", color: "blue", played: true },
+      { id: "X5", color: "blue", played: true },
+    ]);
+  });
+
+  it("has nothing for a color that isn't in the game", () => {
+    expect(handPieces(newGame(TWO_PLAYER), ["red"])).toEqual([]);
   });
 });

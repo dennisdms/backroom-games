@@ -5,7 +5,6 @@ import {
   type Color,
   type CornersState,
   legalMovesExist,
-  type PieceId,
   type Placement,
   type RoomState,
   rankByScore,
@@ -15,6 +14,8 @@ import { html, nothing } from "lit-html";
 import { cornersBoard } from "./board";
 import {
   cornersTray,
+  type GridPiece,
+  handPieces,
   newTrayLocal,
   pieceGrid,
   pieceIcon,
@@ -81,11 +82,11 @@ export const viewSeat = (room: RoomState, l: GameLocal, seat: number) => {
   l.viewing = seat === room.you ? null : seat;
 };
 
-/** Another seat's remaining pieces, read-only. */
+/** Another seat's pieces, read-only, with the played ones marked. */
 export type Hand = {
   seat: number;
   name: string;
-  pieces: { color: Color; id: PieceId }[];
+  pieces: GridPiece[];
 };
 
 /** The hand shown in place of your tray, or null when you're looking at your own. */
@@ -97,7 +98,7 @@ export const viewedHand = (room: RoomState, state: CornersState, l: GameLocal): 
   return {
     seat,
     name: nameOf(room, seat),
-    pieces: colors.flatMap((color) => state.remaining[color].map((id) => ({ color, id }))),
+    pieces: handPieces(state, colors),
   };
 };
 
@@ -176,32 +177,31 @@ export const cornersGame = (room: RoomState, state: CornersState, l: GameLocal, 
   </section>`;
 };
 
-/** Another player's remaining pieces, read-only, with a way back to yours. */
+/** Another player's pieces, read-only, with a way back to yours. */
 const handView = (room: RoomState, hand: Hand, l: GameLocal, a: GameActions) => {
   const back = () => {
     viewSeat(room, l, room.you);
     a.draw();
   };
-  const count = hand.pieces.length;
+  const left = hand.pieces.filter((p) => !p.played).length;
   return html`<div class="hand" data-testid="hand" data-seat=${hand.seat}>
     <p class="hand-head">
-      <span>${hand.name}'s pieces (${count})</span>
+      <span>${hand.name}'s pieces (${left})</span>
       <button type="button" @click=${back}>Back to your pieces</button>
     </p>
     ${pieceGrid(
       `${hand.name}'s pieces`,
       hand.pieces,
-      ({ color, id }) => html`<span
-        class="tray-piece"
+      ({ color, id, played }) => html`<span
+        class="tray-piece ${played ? "played" : ""}"
         role="img"
         aria-label=${id}
         data-piece=${id}
-        title=${id}
+        title=${played ? `${id}, played` : id}
       >
         ${pieceIcon(id, color)}
       </span>`,
     )}
-    ${count === 0 ? html`<p class="muted">No pieces left.</p>` : nothing}
   </div>`;
 };
 

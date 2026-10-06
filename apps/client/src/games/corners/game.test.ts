@@ -153,17 +153,16 @@ describe("viewedHand", () => {
     expect(viewedHand(room, state, l)).toBeNull();
   });
 
-  it("lists another seat's remaining pieces in place of your tray", () => {
+  it("lists another seat's pieces, played ones marked, in place of your tray", () => {
     const l = newGameLocal();
     viewSeat(room, l, 1);
-    expect(viewedHand(room, state, l)).toEqual({
-      seat: 1,
-      name: "Grace",
-      pieces: [
-        { color: "yellow", id: "I1" },
-        { color: "yellow", id: "I3" },
-      ],
-    });
+    const hand = viewedHand(room, state, l);
+    expect(hand).toMatchObject({ seat: 1, name: "Grace" });
+    expect(hand?.pieces).toHaveLength(21);
+    expect(hand?.pieces.filter((p) => !p.played)).toEqual([
+      { color: "yellow", id: "I1", played: false },
+      { color: "yellow", id: "I3", played: false },
+    ]);
     expect(gameTrayProps(room, state, l, actions)).toBeNull();
     viewSeat(room, l, 0);
     expect(gameTrayProps(room, state, l, actions)?.color).toBe("blue");
