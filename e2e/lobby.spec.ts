@@ -8,7 +8,7 @@ test("the host starts once a second player joins", async ({ context }) => {
   await expect(seats(host)).toHaveCount(1);
   await expect(host.getByRole("button", { name: "Start" })).toBeDisabled();
   await expect(host.getByTestId("start-blocker")).toHaveText(
-    "The game needs 2 or 4 players to start; there is 1 player.",
+    "The game needs 2, 3 or 4 players to start; there is 1 player.",
   );
 
   const guest = await context.newPage();
@@ -22,7 +22,7 @@ test("the host starts once a second player joins", async ({ context }) => {
     await expect(seats(page).nth(1)).toContainText("Grace");
     await expect(seats(page).nth(1)).not.toContainText("offline");
   }
-  await expect(seats(host).nth(0).locator(".swatch")).toHaveCount(2);
+  await expect(seats(host).nth(0).locator(".swatch")).toHaveCount(1);
 
   await expect(guest.getByRole("button", { name: "Start" })).toHaveCount(0);
   await expect(guest.getByText("Waiting for the host")).toBeVisible();

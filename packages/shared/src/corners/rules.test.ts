@@ -18,13 +18,17 @@ import {
   type Move,
   PIECE_IDS,
   type PieceId,
+  THREE_PLAYER,
   TWO_PLAYER,
 } from "./types";
 
-describe.each([
-  ["4 players", FOUR_PLAYER],
-  ["2 players", TWO_PLAYER],
-])("newGame with %s", (_, variant) => {
+const VARIANTS = [
+  ["4 players", FOUR_PLAYER, ["blue", "yellow", "red", "green"]],
+  ["3 players", THREE_PLAYER, ["blue", "yellow", "red"]],
+  ["2 players", TWO_PLAYER, ["blue", "yellow"]],
+] as const;
+
+describe.each(VARIANTS)("newGame with %s", (_, variant, colors) => {
   const game = newGame(variant);
 
   it("is a valid state", () => {
@@ -36,10 +40,12 @@ describe.each([
     expect(game.board.every((cell) => cell === 0)).toBe(true);
   });
 
-  it("gives every color all 21 pieces", () => {
+  it("gives every color in play all 21 pieces, and the others none", () => {
     expect(Object.keys(game.remaining).sort()).toEqual([...COLORS].sort());
     for (const color of COLORS) {
-      expect(game.remaining[color]).toEqual([...PIECE_IDS]);
+      const inPlay = (colors as readonly Color[]).includes(color);
+      expect(game.remaining[color]).toEqual(inPlay ? [...PIECE_IDS] : []);
+      expect(game.lastPlaced[color]).toBeNull();
     }
   });
 
@@ -47,27 +53,18 @@ describe.each([
     expect(game.remaining.blue).not.toBe(game.remaining.yellow);
   });
 
-  it("lets blue move first, then yellow, red, green", () => {
+  it("lets blue move first, then the rest clockwise", () => {
     expect(game.turn).toBe("blue");
-    expect(game.variant.colors).toEqual(["blue", "yellow", "red", "green"]);
+    expect(game.variant.colors).toEqual(colors);
+  });
+
+  it("gives each player one color", () => {
+    expect(game.variant.seats).toEqual(colors.map((c) => [c]));
   });
 
   it("has no moves or passes yet", () => {
     expect(game.passes).toBe(0);
     expect(game.lastMove).toBeNull();
-  });
-});
-
-describe("newGame seating", () => {
-  it("gives each of 4 players one color", () => {
-    expect(newGame(FOUR_PLAYER).variant.seats).toEqual([["blue"], ["yellow"], ["red"], ["green"]]);
-  });
-
-  it("pits blue and red against yellow and green with 2 players", () => {
-    expect(newGame(TWO_PLAYER).variant.seats).toEqual([
-      ["blue", "red"],
-      ["yellow", "green"],
-    ]);
   });
 });
 
@@ -399,19 +396,20 @@ describe("applyMove", () => {
     expect(CornersState.parse(after)).toEqual(after);
   });
 
-  it("goes blue, yellow, red, green and back with 2 players", () => {
-    let state = newGame(TWO_PLAYER);
+  it.each([
+    [TWO_PLAYER, ["yellow", "blue"]],
+    [THREE_PLAYER, ["yellow", "red", "blue"]],
+    [FOUR_PLAYER, ["yellow", "red", "green", "blue"]],
+  ])("only gives turns to the colors in play", (variant, expected) => {
+    let state = newGame(variant);
+    const firsts = [place("I1", 0, 0), place("I1", 19, 0), place("I1", 19, 19), place("I1", 0, 19)];
     const turns: Color[] = [];
-    for (const move of [
-      place("I1", 0, 0),
-      place("I1", 19, 0),
-      place("I1", 19, 19),
-      place("I1", 0, 19),
-    ]) {
+    for (const move of firsts.slice(0, variant.colors.length)) {
       state = applyMove(state, move);
       turns.push(state.turn);
     }
-    expect(turns).toEqual(["yellow", "red", "green", "blue"]);
+    expect(turns).toEqual(expected);
+    expect(state.passes).toBe(0);
   });
 
   it("doesn't mutate its input", () => {
@@ -477,10 +475,7 @@ describe("game end", () => {
     expect(after.passes).toBe(COLORS.length);
   });
 
-  it.each([
-    ["4 players", FOUR_PLAYER],
-    ["2 players", TWO_PLAYER],
-  ])("ends a full %s game played with the first legal move", (_, variant) => {
+  it.each(VARIANTS)("ends a full %s game played with the first legal move", (_, variant) => {
     let state = newGame(variant);
     let moves = 0;
     while (!isGameOver(state)) {
@@ -498,7 +493,11 @@ describe("game end", () => {
 
     expect(moves).toBeGreaterThan(20);
     expect(CornersState.parse(state)).toEqual(state);
-    for (const color of COLORS) {
+    for (const color of COLORS.filter((c) => !variant.colors.includes(c))) {
+      expect(squaresOf(state, color)).toEqual([]);
+      expect(state.lastPlaced[color]).toBeNull();
+    }
+    for (const color of variant.colors) {
       const placed = PIECE_IDS.filter((id) => !state.remaining[color].includes(id));
       const squares = placed.reduce((sum, id) => sum + (ORIENTATIONS[id][0]?.length ?? 0), 0);
       expect(squaresOf(state, color)).toHaveLength(squares);

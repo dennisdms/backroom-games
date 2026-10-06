@@ -50,8 +50,8 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   await expect(host.getByTestId("turn")).toHaveText("Grace's turn (yellow)");
   const scores = guest.getByTestId("scores").getByRole("listitem");
   await expect(scores.nth(0)).toContainText("Ada");
-  await expect(scores.nth(0)).toContainText("-177");
-  await expect(scores.nth(1)).toContainText("-178");
+  await expect(scores.nth(0)).toContainText("-88");
+  await expect(scores.nth(1)).toContainText("-89");
 
   // Yellow's domino, picked while waiting, on its corner, top right.
   await square(guest, 19, 0).click();
@@ -60,9 +60,11 @@ test("two players join by code and take turns placing pieces", async ({ browser 
       await expect(square(page, x, 0)).toHaveAttribute("fill", "var(--color-yellow)");
     }
   }
-  // Ada plays red next, the second of her colors.
-  await expect(host.getByTestId("turn")).toHaveText("Your turn (red)");
-  await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (red)");
+  // With one color each, it's back to Ada's blue.
+  await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
+  await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
+  // Only the colors in play get a starting corner.
+  await expect(host.locator("circle.start")).toHaveCount(2);
 
   await hostContext.close();
   await guestContext.close();
