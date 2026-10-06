@@ -5,7 +5,6 @@ import {
   type Color,
   type CornersState,
   checkMove,
-  cornerCandidates,
   flipOrientation,
   type IllegalReason,
   ORIENTATIONS,
@@ -264,10 +263,7 @@ export const cornersTray = (props: TrayProps) => {
       @pointerdown=${onPointerDown}
       @click=${onBoardClick}
     >
-      ${cornersBoard(state, {
-        overlay,
-        candidates: turn ? { squares: cornerCandidates(state, color), color } : undefined,
-      })}
+      ${cornersBoard(state, { overlay })}
     </div>
     <p class="corners-status" aria-live="polite">${status}</p>
     <div class="corners-controls">
