@@ -174,12 +174,6 @@ footer {
   cursor: default;
 }
 
-.corners-play button.primary:not(:disabled) {
-  border-color: var(--ok);
-  background: var(--ok);
-  color: #fff;
-}
-
 .corners-tray {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));

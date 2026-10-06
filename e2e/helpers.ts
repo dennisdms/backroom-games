@@ -14,9 +14,8 @@ export const seats = (page: Page) => page.getByTestId("seats").getByRole("listit
 export const square = (page: Page, x: number, y: number) =>
   page.locator(`.corners-board rect.square[data-x="${x}"][data-y="${y}"]`);
 
-/** Places a piece through the tray: pick it, click a board square, confirm. */
+/** Places a piece through the tray: pick it, click a board square. */
 export const place = async (page: Page, pieceId: string, x: number, y: number) => {
   await page.getByRole("button", { name: pieceId, exact: true }).click();
   await square(page, x, y).click();
-  await page.getByRole("button", { name: "Confirm" }).click();
 };
