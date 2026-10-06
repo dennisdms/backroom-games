@@ -6,7 +6,7 @@ test("creates a room and lands in it", async ({ page }) => {
   await page.getByRole("button", { name: "Create room" }).click();
   await expect(page).toHaveURL(/\/r\/[A-Z0-9]{5}$/);
   await expect(page.getByRole("heading", { name: /^Room [A-Z0-9]{5}$/ })).toBeVisible();
-  await expect(page.getByTestId("players")).toHaveText(/Players:\s*Ada \(you\)/);
+  await expect(page.getByTestId("seats")).toContainText(/Ada\s*\(you\)\s*host/);
 });
 
 test("shows an error for an unknown code", async ({ page }) => {
@@ -32,7 +32,10 @@ test("a second ?player joins the same room by name", async ({ page }) => {
   await page.getByRole("button", { name: "Join", exact: true }).click();
   await expect(page.getByLabel("Your name")).toBeHidden();
   await expect(page.getByRole("heading", { name: `Room ${code}` })).toBeVisible();
-  await expect(page.getByTestId("players")).toHaveText(/Players:\s*Ada \(offline\), Grace \(you\)/);
+  const seats = page.getByTestId("seats").getByRole("listitem");
+  await expect(seats).toHaveCount(2);
+  await expect(seats.nth(0)).toContainText(/Ada.*offline/s);
+  await expect(seats.nth(1)).toContainText(/Grace\s*\(you\)/);
 
   // Player 2 got its own token from the server, apart from player 1's.
   const stored = await page.evaluate(() => ({ ...localStorage }));

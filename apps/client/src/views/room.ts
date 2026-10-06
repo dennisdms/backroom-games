@@ -9,25 +9,24 @@ import {
   type TrayProps,
 } from "../games/corners/tray";
 import type { Session } from "../session";
+import { type LobbyActions, type LobbyLocal, lobby } from "./lobby";
 
-// TODO: lobby (#17), and game and results (#20).
-export const room = (code: string, session: Session | null) => html`
+/** The room page: joining, then the lobby, then the game (#20). */
+export const room = (code: string, session: Session | null, l: LobbyLocal, a: LobbyActions) => html`
   <h1>Room ${code}</h1>
   ${session?.error ? html`<p role="alert">${session.error}</p>` : nothing}
-  ${session?.room ? players(session.room) : html`<p class="muted">Joining…</p>`}
+  ${session?.room ? phase(session.room, l, a) : html`<p class="muted">Joining…</p>`}
   ${import.meta.env.DEV ? preview() : nothing}
   <p><a href="/">Back</a></p>
 `;
 
-/** Who's in the room, until the lobby (#17) shows it properly. */
-const players = (room: RoomState) => html`
-  <p data-testid="players">
-    Players:
-    ${room.players
-      .map((p) => `${p.name}${p.seat === room.you ? " (you)" : ""}${p.online ? "" : " (offline)"}`)
-      .join(", ")}
-  </p>
-`;
+const phase = (room: RoomState, l: LobbyLocal, a: LobbyActions) =>
+  room.phase === "lobby"
+    ? lobby(room, l, a)
+    : // TODO: the game and results screens (#20).
+      html`<p data-testid="game-placeholder">
+        ${room.phase === "playing" ? "The game has started." : "The game is over."}
+      </p>`;
 
 // Dev-only until rooms can play (#20): a hard-coded game to try the tray on,
 // playing whichever color's turn it is, hot-seat. It renders into its own element so
