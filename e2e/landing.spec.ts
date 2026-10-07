@@ -5,7 +5,7 @@ test("creates a room and lands in it", async ({ page }) => {
   await page.getByLabel("Your name").fill("Ada");
   await page.getByRole("button", { name: "Create room" }).click();
   await expect(page).toHaveURL(/\/r\/[A-Z0-9]{5}$/);
-  await expect(page.getByRole("heading", { name: /^Room [A-Z0-9]{5}$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Corners" })).toBeVisible();
   await expect(page.getByTestId("seats")).toContainText(/Ada\s*\(you\)\s*host/);
 });
 
@@ -31,7 +31,7 @@ test("a second ?player joins the same room by name", async ({ page }) => {
   await page.getByLabel("Your name").fill("Grace");
   await page.getByRole("button", { name: "Join", exact: true }).click();
   await expect(page.getByLabel("Your name")).toBeHidden();
-  await expect(page.getByRole("heading", { name: `Room ${code}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Corners" })).toBeVisible();
   const seats = page.getByTestId("seats").getByRole("listitem");
   await expect(seats).toHaveCount(2);
   await expect(seats.nth(0)).toContainText(/Ada.*offline/s);

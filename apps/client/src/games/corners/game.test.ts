@@ -21,6 +21,7 @@ import {
 
 const roomFor = (game: CornersState, you: number, names: string[]): RoomState => ({
   code: "K7QXM",
+  gameId: "corners",
   phase: "playing",
   players: names.map((name, seat) => ({
     seat,

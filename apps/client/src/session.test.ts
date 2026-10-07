@@ -4,6 +4,7 @@ import { newSession, receive } from "./session";
 
 const room = (version: number, code = "K7QXM"): RoomState => ({
   code,
+  gameId: "corners",
   phase: "lobby",
   players: [
     { seat: 0, name: "Ada", online: true, colors: [] },

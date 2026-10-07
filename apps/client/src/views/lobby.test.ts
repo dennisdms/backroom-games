@@ -4,6 +4,7 @@ import { formatCounts, startBlocker } from "./lobby";
 
 const room = (players: number, playerCounts = [2, 4]): RoomState => ({
   code: "K7QXM",
+  gameId: "corners",
   phase: "lobby",
   players: Array.from({ length: players }, (_, seat) => ({
     seat,
