@@ -25,6 +25,7 @@ const game: CornersState = {
 
 const room: RoomState = {
   code: "ABCD",
+  gameId: "corners",
   phase: "playing",
   players: COLORS.map((color, seat) => ({
     seat,

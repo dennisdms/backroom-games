@@ -90,6 +90,7 @@ describe("hello", () => {
       token: player.token,
       room: {
         code: room.code,
+        gameId: "corners",
         phase: "lobby",
         players: [{ seat: 0, name: "Ada", online: true, colors: [] }],
         host: 0,

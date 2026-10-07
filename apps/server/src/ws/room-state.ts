@@ -15,6 +15,7 @@ export function roomStateFor(
   const colorsFrom = colorSource(room, game);
   return {
     code: room.code,
+    gameId: room.gameId,
     phase: room.phase,
     players: room.players.map((p) => ({
       seat: p.seat,

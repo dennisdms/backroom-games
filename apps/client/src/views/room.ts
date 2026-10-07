@@ -6,6 +6,7 @@ import {
   type GameActions,
   type GameLocal,
 } from "../games/corners/game";
+import { gameName } from "../games/names";
 import type { Session } from "../session";
 import { type LobbyActions, type LobbyLocal, lobby } from "./lobby";
 
@@ -19,7 +20,7 @@ export type RoomActions = LobbyActions & GameActions;
 
 /** The room page: joining, then the lobby, then the game and its results. */
 export const room = (code: string, session: Session | null, l: RoomLocal, a: RoomActions) => html`
-  <h1>Room ${code}</h1>
+  <h1>${session?.room ? gameName(session.room.gameId) : `Room ${code}`}</h1>
   ${session?.error ? html`<p role="alert">${session.error}</p>` : nothing}
   ${session?.room ? phase(session.room, l, a) : html`<p class="muted">Joining…</p>`}
   <p><a href="/">Back</a></p>

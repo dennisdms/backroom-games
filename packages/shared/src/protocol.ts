@@ -19,6 +19,8 @@ export type Player = z.infer<typeof Player>;
 /** Everything a client needs to draw a room. The server always sends it whole. */
 export const RoomState = z.object({
   code: z.string(),
+  /** Which game the room plays, e.g. "corners". */
+  gameId: z.string(),
   phase: z.enum(["lobby", "playing", "finished"]),
   players: z.array(Player),
   /** The seat of the host, who starts the game and rematches. */
