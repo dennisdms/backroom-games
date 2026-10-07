@@ -199,8 +199,11 @@ const reasonText: Record<IllegalReason, string> = {
   "can-still-place": "You can't pass while you can still place a piece.",
 };
 
-/** The board with the ghost, the controls and the tray, for `color`. */
-export const cornersTray = (props: TrayProps) => {
+/**
+ * The board with the ghost, and the controls and tray beside it, for `color`.
+ * They come back apart so the game screen can lay them out.
+ */
+export const cornersTray = (props: TrayProps): { board: TemplateResult; side: TemplateResult } => {
   const { state, color, local, draw } = props;
   const { size } = state.variant;
   const turn = state.turn === color;
@@ -256,8 +259,7 @@ export const cornersTray = (props: TrayProps) => {
     if (act(local, action)) draw();
   };
 
-  return html`<div class="corners-play">
-    <div
+  const board = html`<div
       class="corners-play-board ${turn && piece ? "placing" : ""}"
       @pointermove=${onPointerMove}
       @pointerleave=${onPointerLeave}
@@ -265,8 +267,9 @@ export const cornersTray = (props: TrayProps) => {
       @click=${onBoardClick}
     >
       ${cornersBoard(state, { overlay })}
-    </div>
-    <p class="corners-status" aria-live="polite">${status}</p>
+    </div>`;
+
+  const side = html`<div class="corners-play">
     <div class="corners-controls">
       <button
         ?disabled=${!piece}
@@ -290,6 +293,7 @@ export const cornersTray = (props: TrayProps) => {
         ⇋ Flip ${keyCap("F")}
       </button>
     </div>
+    <p class="corners-status" aria-live="polite">${status}</p>
     ${pieceGrid(
       "Your pieces",
       handPieces(state, [color]),
@@ -308,6 +312,8 @@ export const cornersTray = (props: TrayProps) => {
       </button>`,
     )}
   </div>`;
+
+  return { board, side };
 };
 
 /** A control's hotkey as a key cap. CSS hides it on touch-only devices. */

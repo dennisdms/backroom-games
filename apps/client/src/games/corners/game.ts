@@ -165,15 +165,26 @@ export const cornersGame = (room: RoomState, state: CornersState, l: GameLocal, 
   const hand = viewedHand(room, state, l);
   const tray = gameTrayProps(room, state, l, a);
   const yours = isYourTurn(room, state);
+  const play = tray && cornersTray(tray);
+  // The board, and beside it (below on narrow screens) your controls and tray
+  // or another player's pieces.
   return html`<section class="game" data-testid="game">
     ${players(room, state, l, a)}
     <p class="turn ${yours ? "yours" : ""}" data-testid="turn" aria-live="polite">
       <span class="swatch" style="background: var(--color-${state.turn})"></span>
       ${turnText(room, state)}
     </p>
-    ${tray ? cornersTray(tray) : cornersBoard(state)}
-    ${hand ? handView(room, hand, l, a) : nothing}
-    ${yours && tray ? pass(state, state.turn, a) : nothing}
+    <div class="corners-layout">
+      <div class="corners-layout-board">${play ? play.board : cornersBoard(state)}</div>
+      ${
+        play || hand
+          ? html`<div class="corners-side">
+              ${play ? play.side : nothing} ${hand ? handView(room, hand, l, a) : nothing}
+              ${yours && tray ? pass(state, state.turn, a) : nothing}
+            </div>`
+          : nothing
+      }
+    </div>
   </section>`;
 };
 
