@@ -28,8 +28,9 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   }
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
   await expect(guest.getByTestId("turn")).toHaveText("Ada's turn (blue)");
-  // Only the colors in play get a starting corner dot, and nothing else is marked.
-  await expect(host.locator("circle.start")).toHaveCount(2);
+  // Every empty corner gets a dot for blue, the color to move, and nothing else is marked.
+  await expect(host.locator("circle.start")).toHaveCount(4);
+  await expect(host.locator('circle.start[data-color="blue"]')).toHaveCount(4);
   await expect(host.locator(".corners-board .candidates")).toHaveCount(0);
   // The tray has a row per piece size, smallest first.
   const rows = host.getByRole("group", { name: "Your pieces" }).getByRole("group");
@@ -46,7 +47,7 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   // An illegal click does nothing: the first piece has to cover the corner.
   await host.getByRole("button", { name: "I1", exact: true }).click();
   await square(host, 5, 5).click();
-  await expect(host.getByText("Your first piece has to cover your corner.")).toBeVisible();
+  await expect(host.getByText("Your first piece has to cover a corner.")).toBeVisible();
   await expect(square(host, 5, 5)).toHaveAttribute("fill", "var(--board-empty)");
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");
 
@@ -60,9 +61,9 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   await expect(host.getByRole("button", { name: "I1", exact: true })).toBeDisabled();
   await expect(rows).toHaveCount(5);
   await expect(rows.getByRole("button")).toHaveCount(21);
-  // Blue's dot is gone once its corner is covered; yellow's is still there.
-  await expect(guest.locator("circle.start")).toHaveCount(1);
-  await expect(guest.locator('circle.start[data-color="yellow"]')).toHaveCount(1);
+  // Now yellow is to move: the three corners still empty get yellow dots.
+  await expect(guest.locator("circle.start")).toHaveCount(3);
+  await expect(guest.locator('circle.start[data-color="yellow"]')).toHaveCount(3);
   await expect(host.getByTestId("turn")).toHaveText("Grace's turn (yellow)");
   const scores = guest.getByTestId("scores").getByRole("listitem");
   await expect(scores.nth(0)).toContainText("Ada");
@@ -108,7 +109,7 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   await expect(host.getByTestId("hand")).toHaveCount(0);
   await expect(host.getByRole("button", { name: "I1", exact: true })).toBeDisabled();
   await expect(host.getByRole("button", { name: "I2", exact: true })).toBeVisible();
-  // Both corners are covered, so no dots are left.
+  // Blue's first piece is down, so no dots for it.
   await expect(host.locator("circle.start")).toHaveCount(0);
 
   await hostContext.close();
@@ -127,7 +128,7 @@ test("on touch, the first tap previews a piece and a second tap plays it", async
 
   await host.getByRole("button", { name: "I1", exact: true }).tap();
   await square(host, 3, 3).tap();
-  await expect(host.getByText("Your first piece has to cover your corner.")).toBeVisible();
+  await expect(host.getByText("Your first piece has to cover a corner.")).toBeVisible();
   await square(host, 0, 0).tap();
   await expect(host.getByText("Tap again to play it.")).toBeVisible();
   await expect(host.getByTestId("turn")).toHaveText("Your turn (blue)");

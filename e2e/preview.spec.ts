@@ -16,7 +16,7 @@ test("the preview is in the player's color when legal and gray when not", async 
   await square(host, 5, 5).hover();
   await expect(overlay).toHaveClass(/invalid/);
   await expect(overlay).toHaveAttribute("fill", "var(--ghost-illegal)");
-  await expect(host.getByText("Your first piece has to cover your corner.")).toBeVisible();
+  await expect(host.getByText("Your first piece has to cover a corner.")).toBeVisible();
 
   await square(host, 0, 0).hover();
   await expect(overlay).not.toHaveClass(/invalid/);

@@ -55,7 +55,7 @@ export type IllegalReason =
   | "off-board"
   /** A square is already taken. */
   | "occupied"
-  /** The color's first piece doesn't cover its starting corner. */
+  /** The color's first piece doesn't cover an empty board corner. */
   | "misses-corner"
   /** A later piece doesn't touch its own color corner to corner. */
   | "no-corner-contact"
@@ -106,7 +106,7 @@ export const checkMove = (state: CornersState, color: Color, move: Move): MoveCh
   const squares = placementSquares(move);
   if (!squares) return illegal("unknown-orientation");
 
-  const { size, corners } = state.variant;
+  const { size } = state.variant;
   const at = (x: number, y: number): Cell | null =>
     x >= 0 && y >= 0 && x < size && y < size ? (state.board[y * size + x] ?? null) : null;
 
@@ -118,8 +118,9 @@ export const checkMove = (state: CornersState, color: Color, move: Move): MoveCh
     squares.some(([x, y]) => offsets.some(([dx, dy]) => at(x + dx, y + dy) === own));
 
   if (!state.board.includes(own)) {
-    const [cx, cy] = corners[color];
-    return squares.some(([x, y]) => x === cx && y === cy) ? { ok: true } : illegal("misses-corner");
+    const corners = boardCorners(size);
+    const coversCorner = squares.some(([x, y]) => corners.some(([cx, cy]) => x === cx && y === cy));
+    return coversCorner ? { ok: true } : illegal("misses-corner");
   }
   if (touches(EDGES)) return illegal("touches-own-edge");
   if (!touches(DIAGONALS)) return illegal("no-corner-contact");
@@ -132,22 +133,36 @@ export const isLegalMove = (state: CornersState, color: Color, move: Move): bool
 
 const illegal = (reason: IllegalReason): MoveCheck => ({ ok: false, reason });
 
+/**
+ * The four corner squares of a `size` board, sorted by y then x. A color's
+ * first piece must cover one of them (any one still empty).
+ */
+export const boardCorners = (size: number): Square[] => {
+  const last = size - 1;
+  const corners: Square[] = [
+    [0, 0],
+    [last, 0],
+    [0, last],
+    [last, last],
+  ];
+  return corners.filter(([x, y], i) => corners.findIndex(([a, b]) => a === x && b === y) === i);
+};
+
 const onBoard = (size: number, x: number, y: number) => x >= 0 && y >= 0 && x < size && y < size;
 
 /**
  * The squares where `color`'s next piece could touch it: empty squares diagonal
  * to one of its squares with no edge against it, sorted by y then x. Before its
- * first piece, its starting corner if that's still empty, otherwise none. Every
- * legal placement covers at least one of these.
+ * first piece, the board corners that are still empty. Every legal placement
+ * covers at least one of these.
  */
 export const cornerCandidates = (state: CornersState, color: Color): Square[] => {
-  const { size, corners } = state.variant;
+  const { size } = state.variant;
   const own = cellOf(color);
   const isOwn = (x: number, y: number) => onBoard(size, x, y) && state.board[y * size + x] === own;
 
   if (!state.board.includes(own)) {
-    const [cx, cy] = corners[color];
-    return state.board[cy * size + cx] === 0 ? [[cx, cy]] : [];
+    return boardCorners(size).filter(([x, y]) => state.board[y * size + x] === 0);
   }
 
   const candidates: Square[] = [];
