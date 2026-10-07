@@ -259,12 +259,14 @@ footer {
   }
 }
 
-/* Landing page and name prompt: create or join a room. */
-.entry {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
+/* Landing page, create form and name prompt: join or create a room. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .entry-card {
@@ -296,6 +298,7 @@ footer {
 .entry-card button {
   /* At least 16px so phones don't zoom in on focus, and big enough to tap. */
   font: inherit;
+  box-sizing: border-box;
   min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
@@ -329,6 +332,89 @@ footer {
 
 .form-error {
   color: var(--color-red);
+}
+
+.join-card {
+  margin-top: 2rem;
+}
+
+/* Name, code and Join on one row where there's room, stacked on phones. */
+.join-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.join-fields button {
+  padding-inline: 1.5rem;
+}
+
+@media (max-width: 36rem) {
+  .join-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.create {
+  margin-top: 2.5rem;
+}
+
+.create h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+}
+
+.game-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--board-line);
+  border-radius: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.game-card:hover,
+.game-card:focus-visible {
+  border-color: var(--fg);
+  background: var(--board-empty);
+}
+
+.game-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.players {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.back {
+  color: var(--muted);
+}
+
+.create-form {
+  max-width: 24rem;
+}
+
+.create-form h1 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
 .name-prompt {

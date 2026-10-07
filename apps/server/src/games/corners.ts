@@ -1,5 +1,6 @@
 import {
   applyMove,
+  CORNERS,
   type CornersState,
   checkMove,
   FOUR_PLAYER,
@@ -32,8 +33,8 @@ const validate = (state: CornersState, player: PlayerId, move: Move): MoveCheck 
 };
 
 export const corners: GameModule<CornersState, Move> = {
-  id: "corners",
-  playerCounts: [...VARIANTS.keys()],
+  id: CORNERS.id,
+  playerCounts: CORNERS.playerCounts,
 
   init(players) {
     const variant = VARIANTS.get(players.length);

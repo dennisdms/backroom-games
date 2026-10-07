@@ -1,4 +1,4 @@
-import { CreateRoomRequest, MAX_NAME_LENGTH } from "@backroom/shared";
+import { CreateRoomRequest, GAMES, MAX_NAME_LENGTH } from "@backroom/shared";
 import { html, render } from "lit-html";
 import { createRoom, getRoom } from "./api";
 import { type GameActions, gameTrayProps, newGameLocal, turnCameToYou } from "./games/corners/game";
@@ -8,7 +8,7 @@ import { newSession, receive, type Session } from "./session";
 import { type ConnectionStatus, connect } from "./socket";
 import { browserStore, playerFromSearch, playerStorage } from "./storage";
 import "./styles/main.css";
-import { type FormAction, type Forms, landing } from "./views/landing";
+import { createForm, type FormAction, type Forms, landing } from "./views/landing";
 import { type LobbyLocal, newLobbyLocal } from "./views/lobby";
 import { namePrompt } from "./views/name-prompt";
 import { room } from "./views/room";
@@ -56,15 +56,23 @@ function view() {
 
 function page() {
   if (route.name === "landing") {
-    return landing(local, {
+    return landing(GAMES, local, {
       onName: (name) => {
         local.name = name;
       },
       onCode: (code) => {
         local.code = code;
       },
-      onCreate: create,
       onJoin: join,
+    });
+  }
+  if (route.name === "create") {
+    const { game } = route;
+    return createForm(game, local, {
+      onName: (name) => {
+        local.name = name;
+      },
+      onCreate: () => create(game.id),
     });
   }
   // A seat comes from creating the room (token) or from the name prompt
@@ -147,8 +155,8 @@ function start(action: FormAction) {
   draw();
 }
 
-async function create() {
-  const body = CreateRoomRequest.safeParse({ game: "corners", name: local.name });
+async function create(game: string) {
+  const body = CreateRoomRequest.safeParse({ game, name: local.name });
   if (!body.success) return fail("create", NAME_ERROR);
   start("create");
   const result = await createRoom(body.data);
@@ -160,11 +168,15 @@ async function create() {
 }
 
 async function join() {
+  const name = CreateRoomRequest.shape.name.safeParse(local.name);
+  if (!name.success) return fail("join", NAME_ERROR);
   const code = normalizeCode(local.code);
   if (!code) return fail("join", "Enter a room code: letters and numbers, like K7QXM.");
   start("join");
   const result = await getRoom(code);
   if (!result.ok) return fail("join", result.error);
+  // With a name stored for the room, it opens without asking for one again.
+  storage.setName(result.value.code, name.data);
   local.code = "";
   navigate(roomPath(result.value.code));
 }
