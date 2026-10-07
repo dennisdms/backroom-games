@@ -4,6 +4,7 @@
 import {
   type Color,
   type CornersState,
+  HINTS,
   legalMovesExist,
   type Placement,
   type RoomState,
@@ -157,11 +158,48 @@ export const gameTrayProps = (
 ): TrayProps | null => {
   if (viewedHand(room, state, l)) return null;
   const color = trayColor(state, room.you);
-  return color && { state, color, local: l.tray, draw: a.draw, onConfirm: a.onPlace };
+  return (
+    color && {
+      state,
+      color,
+      local: l.tray,
+      hints: room.options[HINTS.key] === true,
+      draw: a.draw,
+      onConfirm: a.onPlace,
+    }
+  );
 };
 
-/** The game while it's being played. */
-export const cornersGame = (room: RoomState, state: CornersState, l: GameLocal, a: GameActions) => {
+/** A turn clock's time left as "m:ss", rounded up so it shows 0:00 only once it's out. */
+export const formatCountdown = (ms: number): string => {
+  const seconds = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+};
+
+/** The last seconds of a turn, when the countdown stands out. */
+export const URGENT_MS = 10_000;
+
+const countdown = (timeLeft: number | null) =>
+  timeLeft === null
+    ? nothing
+    : html`<span
+        class="countdown ${timeLeft <= URGENT_MS ? "urgent" : ""}"
+        data-testid="countdown"
+        title="Time left for this turn"
+        >${formatCountdown(timeLeft)}</span
+      >`;
+
+/**
+ * The game while it's being played. `timeLeft` is the turn clock's, in
+ * milliseconds, or null without one.
+ */
+export const cornersGame = (
+  room: RoomState,
+  state: CornersState,
+  l: GameLocal,
+  a: GameActions,
+  timeLeft: number | null = null,
+) => {
   const hand = viewedHand(room, state, l);
   const tray = gameTrayProps(room, state, l, a);
   const yours = isYourTurn(room, state);
@@ -170,9 +208,10 @@ export const cornersGame = (room: RoomState, state: CornersState, l: GameLocal, 
   // or another player's pieces.
   return html`<section class="game" data-testid="game">
     ${players(room, state, l, a)}
-    <p class="turn ${yours ? "yours" : ""}" data-testid="turn" aria-live="polite">
+    <p class="turn ${yours ? "yours" : ""}">
       <span class="swatch" style="background: var(--color-${state.turn})"></span>
-      ${turnText(room, state)}
+      <span data-testid="turn" aria-live="polite">${turnText(room, state)}</span>
+      ${countdown(timeLeft)}
     </p>
     <div class="corners-layout">
       <div class="corners-layout-board">${play ? play.board : cornersBoard(state)}</div>

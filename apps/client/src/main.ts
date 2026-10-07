@@ -1,4 +1,11 @@
-import { CreateRoomRequest, GAMES, MAX_NAME_LENGTH } from "@backroom/shared";
+import {
+  CreateRoomRequest,
+  GAMES,
+  type GameInfo,
+  MAX_NAME_LENGTH,
+  ROOM_SETTINGS,
+  type Setting,
+} from "@backroom/shared";
 import { html, render } from "lit-html";
 import { createRoom, getRoom } from "./api";
 import { type GameActions, gameTrayProps, newGameLocal, turnCameToYou } from "./games/corners/game";
@@ -8,7 +15,7 @@ import { newSession, receive, type Session } from "./session";
 import { type ConnectionStatus, connect } from "./socket";
 import { browserStore, playerFromSearch, playerStorage } from "./storage";
 import "./styles/main.css";
-import { createForm, type FormAction, type Forms, landing } from "./views/landing";
+import { createForm, type FormAction, type Forms, landing, pickedValue } from "./views/landing";
 import { type LobbyLocal, newLobbyLocal } from "./views/lobby";
 import { namePrompt } from "./views/name-prompt";
 import { room } from "./views/room";
@@ -30,6 +37,7 @@ let helloSent: string | null = null;
 const local: Forms = {
   name: storage.lastName() ?? "",
   code: "",
+  settings: {},
   pending: null,
   error: null,
 };
@@ -41,6 +49,20 @@ if (!root) throw new Error("missing #app element");
 
 function draw() {
   render(view(), root as HTMLElement);
+  tickWhileTimed();
+}
+
+/** Redraws every second while a turn clock runs, for the countdown. */
+let ticker: ReturnType<typeof setInterval> | undefined;
+
+function tickWhileTimed() {
+  const timed = session?.room?.phase === "playing" && session.turnEndsAt !== null;
+  if (timed && ticker === undefined) {
+    ticker = setInterval(draw, 1000);
+  } else if (!timed && ticker !== undefined) {
+    clearInterval(ticker);
+    ticker = undefined;
+  }
 }
 
 function view() {
@@ -72,7 +94,11 @@ function page() {
       onName: (name) => {
         local.name = name;
       },
-      onCreate: () => create(game.id),
+      onSetting: (key, value) => {
+        local.settings[key] = value;
+        draw();
+      },
+      onCreate: () => create(game),
     });
   }
   // A seat comes from creating the room (token) or from the name prompt
@@ -155,8 +181,15 @@ function start(action: FormAction) {
   draw();
 }
 
-async function create(game: string) {
-  const body = CreateRoomRequest.safeParse({ game, name: local.name });
+async function create(game: GameInfo) {
+  const picks = (settings: readonly Setting[]) =>
+    Object.fromEntries(settings.map((s) => [s.key, pickedValue(local, s)]));
+  const body = CreateRoomRequest.safeParse({
+    game: game.id,
+    name: local.name,
+    settings: picks(ROOM_SETTINGS),
+    options: picks(game.options),
+  });
   if (!body.success) return fail("create", NAME_ERROR);
   start("create");
   const result = await createRoom(body.data);

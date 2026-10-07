@@ -30,7 +30,37 @@ describe("POST /api/rooms", () => {
     expect(room?.players).toEqual([{ seat: 0, name: "Ada", token: playerToken }]);
   });
 
+  it("keeps the settings and the game's options, defaulting the rest", async () => {
+    const res = await createRoom({
+      game: "corners",
+      name: "Ada",
+      settings: { turnTimer: 30 },
+      options: { hints: true },
+    });
+    expect(res.statusCode).toBe(201);
+    const picked = await rooms.get(CreateRoomResponse.parse(res.json()).code);
+    expect(picked).toMatchObject({ settings: { turnTimer: 30 }, options: { hints: true } });
+
+    const plain = await createRoom({ game: "corners", name: "Ada" });
+    const room = await rooms.get(CreateRoomResponse.parse(plain.json()).code);
+    expect(room).toMatchObject({ settings: { turnTimer: 60 }, options: { hints: false } });
+  });
+
   it.each([
+    ["an unknown option", { fog: true }],
+    ["an option value that isn't a choice", { hints: "yes" }],
+  ])("rejects %s", async (_, options) => {
+    const res = await createRoom({ game: "corners", name: "Ada", options });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual({ error: "invalid_options" });
+  });
+
+  it.each([
+    [
+      "a turn timer that isn't a choice",
+      { game: "corners", name: "Ada", settings: { turnTimer: 45 } },
+    ],
+    ["options that aren't an object", { game: "corners", name: "Ada", options: "hints" }],
     ["an empty body", {}],
     ["a missing name", { game: "corners" }],
     ["a blank name", { game: "corners", name: "   " }],

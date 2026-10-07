@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GameOptions, RoomSettings } from "./games";
 
 // HTTP API under /api, shared by client and server. Errors are JSON
 // `{ error }` with a snake_case code, e.g. `{ "error": "room_not_found" }`.
@@ -11,8 +12,16 @@ export const CreateRoomRequest = z.object({
   game: z.string().min(1),
   /** The creator's display name. Surrounding whitespace is trimmed. */
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
+  /** Settings every room has. Missing ones get their default. */
+  settings: RoomSettings.prefault({}),
+  /**
+   * The game's own options (`GameInfo.options`). The server checks them
+   * against the game and fills in defaults.
+   */
+  options: GameOptions.optional(),
 });
-export type CreateRoomRequest = z.infer<typeof CreateRoomRequest>;
+/** What a client sends; settings and options it leaves out get their defaults. */
+export type CreateRoomRequest = z.input<typeof CreateRoomRequest>;
 
 /** 201 response to `POST /api/rooms`. */
 export const CreateRoomResponse = z.object({

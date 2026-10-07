@@ -10,5 +10,6 @@ export {
   RoomManager,
   type RoomManagerOptions,
   SWEEP_INTERVAL_MS,
+  type UpdateOptions,
 } from "./manager";
 export type { Room, RoomPhase, RoomPlayer } from "./room";

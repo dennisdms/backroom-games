@@ -1,6 +1,6 @@
 // The plug-in point for games. Rooms and the WebSocket only ever talk to a
 // GameModule, so they stay the same for every game.
-import type { Player, Ranking, RoomState } from "@backroom/shared";
+import type { GameOptions, Player, Ranking, RoomState, Setting } from "@backroom/shared";
 
 /** Games identify players by their room seat (0-based). */
 export type PlayerId = number;
@@ -25,13 +25,24 @@ export interface GameModule<State = unknown, Move = unknown> {
   id: string;
   /** The player counts a game can start with, ascending. */
   playerCounts: readonly number[];
-  /** A new game for these players, seats 0..n-1. Throws for an unsupported count. */
-  init(players: PlayerId[], options: unknown): State;
+  /** The options the host can pick for this game, from its `GameInfo`. */
+  options: readonly Setting[];
+  /**
+   * A new game for these players, seats 0..n-1, with the room's options (see
+   * `options`, checked and defaulted). Throws for an unsupported count.
+   */
+  init(players: PlayerId[], options: GameOptions): State;
   /** The move as this game's type, or null if it isn't one. */
   parseMove(input: unknown): Move | null;
   validate(state: State, player: PlayerId, move: Move): MoveCheck;
   /** The state after `player` makes `move`. Throws if `validate` would reject it. */
   apply(state: State, player: PlayerId, move: Move): State;
+  /**
+   * The state after the player to move ran out of time: their turn is lost
+   * and play moves on. The room's turn timer calls it, only while the game
+   * isn't over.
+   */
+  forfeitTurn(state: State): State;
   isOver(state: State): boolean;
   /** The standings so far; final once `isOver`. */
   result(state: State): Ranking;

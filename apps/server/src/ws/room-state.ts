@@ -11,6 +11,7 @@ export function roomStateFor(
   game: GameModule,
   seat: number,
   online: (seat: number) => boolean,
+  now: number = Date.now(),
 ): RoomState {
   const colorsFrom = colorSource(room, game);
   return {
@@ -26,6 +27,9 @@ export function roomStateFor(
     host: room.hostSeat,
     playerCounts: [...game.playerCounts],
     you: seat,
+    settings: room.settings,
+    options: room.options,
+    turnTimeLeft: room.turnEndsAt === null ? null : Math.max(0, room.turnEndsAt - now),
     game: room.game === null ? null : game.view(room.game, seat),
     version: room.version,
   };
@@ -42,7 +46,7 @@ function colorSource(room: Room, game: GameModule): unknown {
   try {
     return game.init(
       room.players.map((p) => p.seat),
-      undefined,
+      room.options,
     );
   } catch {
     return null;

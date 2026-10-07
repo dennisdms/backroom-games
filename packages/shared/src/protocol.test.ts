@@ -36,6 +36,9 @@ const room: RoomState = {
   host: 0,
   playerCounts: [2, 4],
   you: 0,
+  settings: { turnTimer: 60 },
+  options: { hints: true },
+  turnTimeLeft: 42_000,
   game,
   version: 3,
 };

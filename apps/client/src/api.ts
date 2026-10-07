@@ -28,6 +28,7 @@ const messages: Record<string, string> = {
   room_not_found: "There's no room with that code. Check it and try again.",
   invalid_request: "That didn't work. Check what you entered and try again.",
   unknown_game: "That game isn't available.",
+  invalid_options: "Those settings aren't available for this game.",
 };
 
 /** A readable message for an API error code. */

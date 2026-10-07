@@ -1,6 +1,6 @@
 import type { RoomState } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { newSession, receive } from "./session";
+import { newSession, receive, turnTimeLeft } from "./session";
 
 const room = (version: number, code = "K7QXM"): RoomState => ({
   code,
@@ -13,6 +13,9 @@ const room = (version: number, code = "K7QXM"): RoomState => ({
   host: 0,
   playerCounts: [2, 4],
   you: 1,
+  settings: { turnTimer: 60 },
+  options: { hints: false },
+  turnTimeLeft: null,
   game: null,
   version,
 });
@@ -30,6 +33,17 @@ describe("receive", () => {
     expect(session.room?.version).toBe(3);
     session = receive(session, { type: "roomState", room: room(4) });
     expect(session.room?.version).toBe(4);
+  });
+
+  it("counts the turn clock down from when the state arrived", () => {
+    const timed = { ...room(1), turnTimeLeft: 42_000 };
+    const session = receive(newSession("K7QXM"), { type: "roomState", room: timed }, 1_000);
+    expect(session.turnEndsAt).toBe(43_000);
+    expect(turnTimeLeft(session, 2_000)).toBe(41_000);
+    expect(turnTimeLeft(session, 50_000)).toBe(0);
+    const off = receive(session, { type: "roomState", room: room(2) }, 3_000);
+    expect(off.turnEndsAt).toBeNull();
+    expect(turnTimeLeft(off)).toBeNull();
   });
 
   it("ignores states for another room", () => {

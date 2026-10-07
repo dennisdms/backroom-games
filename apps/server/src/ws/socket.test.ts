@@ -1,4 +1,9 @@
-import { type ClientMessage, CornersState, type ServerMessage } from "@backroom/shared";
+import {
+  type ClientMessage,
+  CornersState,
+  type RoomSettings,
+  type ServerMessage,
+} from "@backroom/shared";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../app";
 
@@ -41,13 +46,20 @@ async function connect() {
 type Player = Awaited<ReturnType<typeof connect>>;
 
 /** A Corners room with Ada hosting and Bob joined, both connected. */
-async function twoPlayers() {
-  app = await buildApp({ logLevel: "silent" });
+async function twoPlayers({
+  turnMs,
+  settings,
+}: {
+  turnMs?: (seconds: number) => number;
+  settings?: RoomSettings;
+} = {}) {
+  app = await buildApp({ logLevel: "silent", ...(turnMs && { turnMs }) });
   await app.ready();
   const { room, player } = await app.rooms.create({
     gameId: "corners",
     maxPlayers: 4,
     name: "Ada",
+    ...(settings && { settings }),
   });
   const ada = await connect();
   ada.send({ type: "hello", code: room.code, token: player.token, name: "Ada" });
@@ -96,6 +108,9 @@ describe("hello", () => {
         host: 0,
         playerCounts: [2, 3, 4],
         you: 0,
+        settings: { turnTimer: 60 },
+        options: {},
+        turnTimeLeft: null,
         game: null,
         version: 0,
       },
@@ -264,6 +279,79 @@ describe("moves", () => {
     const client = await connect();
     client.send({ type: "pass" });
     expect(await client.next("error")).toMatchObject({ code: "not_in_room" });
+  });
+});
+
+describe("turn timer", () => {
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it("sends the time left and forfeits the turn when it runs out", async () => {
+    const { code, ada, bob } = await twoPlayers({ turnMs: () => 100 });
+    ada.send({ type: "startGame" });
+    const started = (await ada.next("roomState")).room;
+    expect(started.settings).toEqual({ turnTimer: 60 });
+    expect(started.turnTimeLeft).toBeGreaterThan(0);
+    expect(started.turnTimeLeft).toBeLessThanOrEqual(100);
+
+    // Nobody moves: blue loses its turn, then yellow does, and blue is up again.
+    const first = (await bob.next("roomState")).room;
+    expect(first.game?.turn).toBe("blue");
+    const second = (await bob.next("roomState")).room;
+    expect(second).toMatchObject({ version: 3, phase: "playing" });
+    expect(second.game?.turn).toBe("yellow");
+    expect(second.game?.board.every((cell) => cell === 0)).toBe(true);
+    expect(second.turnTimeLeft).toBeGreaterThan(0);
+    expect((await bob.next("roomState")).room.game?.turn).toBe("blue");
+    // Timeouts aren't activity, so an abandoned game still gets swept.
+    const stored = await app.rooms.get(code);
+    expect(stored?.lastActiveAt).toBeLessThan(stored?.turnEndsAt ?? 0);
+    expect((stored?.turnEndsAt ?? 0) - (stored?.lastActiveAt ?? 0)).toBeGreaterThan(200);
+
+    // A forfeited turn isn't a block: blue can still place.
+    ada.send(monominoAt(0, 0));
+    const { room } = await bob.next("roomState");
+    expect(room.game?.board[0]).toBe(1);
+    expect(room.game?.turn).toBe("yellow");
+  });
+
+  it("restarts the clock on every move", async () => {
+    const { ada, bob } = await twoPlayers({ turnMs: () => 300 });
+    await start(ada, bob);
+    await sleep(200);
+    ada.send(monominoAt(0, 0));
+    await bob.next("roomState");
+    const moved = Date.now();
+    // Blue's clock would have run out by now; yellow gets a full turn.
+    const { room } = await bob.next("roomState");
+    expect(Date.now() - moved).toBeGreaterThanOrEqual(250);
+    expect(room.game?.turn).toBe("blue");
+    expect(room.game?.board[0]).toBe(1);
+  });
+
+  it("runs no clock when it's off", async () => {
+    const { code, ada, bob } = await twoPlayers({
+      turnMs: () => 50,
+      settings: { turnTimer: 0 },
+    });
+    ada.send({ type: "startGame" });
+    expect((await ada.next("roomState")).room.turnTimeLeft).toBeNull();
+    await sleep(150);
+    expect(bob.inbox.filter((m) => m.type === "roomState")).toHaveLength(1);
+    expect((await app.rooms.get(code))?.game).toMatchObject({ turn: "blue" });
+  });
+
+  it("stops when the game ends", async () => {
+    const { code, ada, bob } = await twoPlayers({ turnMs: () => 100 });
+    await start(ada, bob);
+    await app.rooms.update(code, (room) => {
+      const state = CornersState.parse(room.game);
+      room.game = { ...state, remaining: { ...state.remaining, blue: ["I1"], yellow: [] } };
+    });
+    ada.send(monominoAt(0, 0));
+    const { room } = await bob.next("roomState");
+    expect(room).toMatchObject({ phase: "finished", turnTimeLeft: null });
+    await sleep(200);
+    expect(bob.inbox).toEqual([]);
   });
 });
 

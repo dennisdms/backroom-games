@@ -104,6 +104,11 @@ footer {
   pointer-events: none;
 }
 
+.corners-board .candidates {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .corners-board .last-move {
   fill: none;
   stroke: var(--fg);
@@ -365,6 +370,7 @@ footer {
 }
 
 .entry-card input,
+.entry-card select,
 .entry-card button {
   /* At least 16px so phones don't zoom in on focus, and big enough to tap. */
   font: inherit;
@@ -374,7 +380,8 @@ footer {
   border-radius: 0.5rem;
 }
 
-.entry-card input {
+.entry-card input,
+.entry-card select {
   border: 1px solid var(--board-line);
   background: var(--bg);
   color: var(--fg);
@@ -596,6 +603,17 @@ footer {
 
 .turn.yours {
   font-weight: 700;
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.countdown.urgent {
+  font-weight: 700;
+  color: var(--color-red);
 }
 
 .scores {

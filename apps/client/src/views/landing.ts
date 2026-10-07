@@ -1,4 +1,12 @@
-import { type GameInfo, MAX_NAME_LENGTH, playerRange, playerRangeLabel } from "@backroom/shared";
+import {
+  type GameInfo,
+  MAX_NAME_LENGTH,
+  playerRange,
+  playerRangeLabel,
+  ROOM_SETTINGS,
+  type Setting,
+  type SettingValue,
+} from "@backroom/shared";
 import { html, nothing } from "lit-html";
 import { createPath } from "../routes";
 
@@ -9,6 +17,8 @@ export type FormAction = "create" | "join" | "name";
 export interface Forms {
   name: string;
   code: string;
+  /** The create form's picks, by `Setting.key`. Unpicked settings keep their default. */
+  settings: Record<string, SettingValue>;
   pending: FormAction | null;
   error: { action: FormAction; message: string } | null;
 }
@@ -69,12 +79,13 @@ export const landing = (games: readonly GameInfo[], f: Forms, a: LandingActions)
 
 export interface CreateFormActions {
   onName: (name: string) => void;
+  onSetting: (key: string, value: SettingValue) => void;
   onCreate: () => void;
 }
 
 /**
- * The form that creates a room for `game`. Fields the game needs beyond the
- * name go in `gameFields`.
+ * The form that creates a room for `game`: the name, then the settings every
+ * room has and the game's own options.
  */
 export const createForm = (game: GameInfo, f: Forms, a: CreateFormActions) => html`
   <p><a href="/" class="back"><span aria-hidden="true">←</span> All games</a></p>
@@ -82,7 +93,7 @@ export const createForm = (game: GameInfo, f: Forms, a: CreateFormActions) => ht
     <h1>New ${game.name} room</h1>
     ${players(game)}
     ${nameField(f, a.onName)}
-    ${gameFields(game)}
+    ${[...ROOM_SETTINGS, ...game.options].map((s) => settingField(s, f, a))}
     <button type="submit" ?disabled=${f.pending !== null}>
       ${f.pending === "create" ? "Creating…" : "Create room"}
     </button>
@@ -90,8 +101,32 @@ export const createForm = (game: GameInfo, f: Forms, a: CreateFormActions) => ht
   </form>
 `;
 
-/** Per-game settings fields in the create form. No game has any yet. */
-const gameFields = (_game: GameInfo) => nothing;
+/** The value picked for `setting`, or its default. */
+export const pickedValue = (f: Forms, setting: Setting): SettingValue =>
+  f.settings[setting.key] ?? setting.default;
+
+/** One setting as a drop-down of its choices. */
+const settingField = (setting: Setting, f: Forms, a: CreateFormActions) => {
+  const picked = pickedValue(f, setting);
+  return html`<label>
+    ${setting.label}
+    <select
+      name=${setting.key}
+      @change=${(e: Event) => {
+        const index = Number((e.currentTarget as HTMLSelectElement).value);
+        const choice = setting.choices[index];
+        if (choice) a.onSetting(setting.key, choice.value);
+      }}
+    >
+      ${setting.choices.map(
+        (c, i) =>
+          html`<option value=${i} ?selected=${c.value === picked}>${capitalize(c.label)}</option>`,
+      )}
+    </select>
+  </label>`;
+};
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** A small person icon and the player range, e.g. "2–4", read as "2 to 4 players". */
 const players = (game: GameInfo) => html`

@@ -5,6 +5,7 @@ import {
   type Color,
   type CornersState,
   checkMove,
+  cornerCandidates,
   flipOrientation,
   type IllegalReason,
   ORIENTATIONS,
@@ -48,6 +49,8 @@ export type TrayProps = {
    */
   color: Color;
   local: TrayLocal;
+  /** Marks on your turn where your next piece could go (the room's hints option). */
+  hints?: boolean;
   /** Redraws after `local` changes. */
   draw: () => void;
   /** Called with the move the player made, e.g. to send `placePiece`. */
@@ -266,7 +269,11 @@ export const cornersTray = (props: TrayProps): { board: TemplateResult; side: Te
       @pointerdown=${onPointerDown}
       @click=${onBoardClick}
     >
-      ${cornersBoard(state, { overlay })}
+      ${cornersBoard(state, {
+        overlay,
+        candidates:
+          turn && props.hints ? { squares: cornerCandidates(state, color), color } : undefined,
+      })}
     </div>`;
 
   const side = html`<div class="corners-play">

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { type GameOptions, RoomSettings } from "@backroom/shared";
 import type { RoomStore } from "../store/types";
 import { generateRoomCode } from "./codes";
 import type { Room, RoomPlayer } from "./room";
@@ -25,6 +26,18 @@ export interface CreateRoomInput {
   maxPlayers: number;
   /** Display name of the creator, who becomes the host. */
   name: string;
+  /** Defaults to every setting's default. */
+  settings?: RoomSettings;
+  /** The game's options, already checked against the game. Defaults to none. */
+  options?: GameOptions;
+}
+
+export interface UpdateOptions {
+  /**
+   * Whether the change counts as activity that keeps the room from being
+   * swept. False for changes no player made, e.g. a turn timing out.
+   */
+  active?: boolean;
 }
 
 export interface JoinRoomInput {
@@ -52,6 +65,7 @@ export class RoomManager {
   private readonly idleMs: number;
   private readonly newCode: () => string;
   private readonly locks = new Map<string, Promise<unknown>>();
+  private readonly sweepListeners: ((codes: string[]) => void)[] = [];
 
   constructor({
     store,
@@ -70,6 +84,8 @@ export class RoomManager {
     gameId,
     maxPlayers,
     name,
+    settings = RoomSettings.parse({}),
+    options = {},
   }: CreateRoomInput): Promise<{ room: Room; player: RoomPlayer }> {
     if (!Number.isInteger(maxPlayers) || maxPlayers < 1) {
       throw new RangeError(`maxPlayers must be a positive integer, got ${maxPlayers}`);
@@ -81,6 +97,9 @@ export class RoomManager {
         code: this.newCode(),
         gameId,
         maxPlayers,
+        settings,
+        options,
+        turnEndsAt: null,
         phase: "lobby",
         hostSeat: player.seat,
         players: [player],
@@ -131,24 +150,37 @@ export class RoomManager {
   }
 
   /**
-   * Applies `change` to a room and saves it, bumping `version` and
-   * `lastActiveAt`. For game moves and phase changes. Returns undefined if
-   * the room doesn't exist. If `change` throws, nothing is saved.
+   * Applies `change` to a room and saves it, bumping `version` and, unless
+   * `active` is false, `lastActiveAt`. For game moves and phase changes.
+   * Returns undefined if the room doesn't exist or `change` returns false,
+   * which saves nothing. If `change` throws, nothing is saved either.
    */
-  update(code: string, change: (room: Room) => void | Promise<void>): Promise<Room | undefined> {
+  update(
+    code: string,
+    change: (room: Room) => unknown,
+    { active = true }: UpdateOptions = {},
+  ): Promise<Room | undefined> {
     return this.withLock(code, async () => {
       const room = await this.store.get(code);
       if (!room) return undefined;
-      await change(room);
-      this.touch(room);
+      if ((await change(room)) === false) return undefined;
+      room.version++;
+      if (active) room.lastActiveAt = this.now();
       await this.store.save(room);
       return room;
     });
   }
 
+  /** Calls `listener` with the codes of the rooms each sweep removes. */
+  onSwept(listener: (codes: string[]) => void) {
+    this.sweepListeners.push(listener);
+  }
+
   /** Removes rooms idle for longer than `idleMs`. Returns their codes. */
-  sweep(): Promise<string[]> {
-    return this.store.deleteIdleSince(this.now() - this.idleMs);
+  async sweep(): Promise<string[]> {
+    const codes = await this.store.deleteIdleSince(this.now() - this.idleMs);
+    if (codes.length > 0) for (const listener of this.sweepListeners) listener(codes);
+    return codes;
   }
 
   /** Runs `sweep` every `intervalMs`. Returns a function that stops it. */
