@@ -20,21 +20,4 @@ describe.each([
     expect(variant.colors).toEqual(COLORS.slice(0, players));
     expect(variant.seats).toEqual(variant.colors.map((c) => [c]));
   });
-
-  it("starts every color in a different board corner", () => {
-    const last = variant.size - 1;
-    const corners = variant.colors.map((c) => variant.corners[c].join());
-    expect(new Set(corners).size).toBe(variant.colors.length);
-    for (const [x, y] of Object.values(variant.corners)) {
-      expect([0, last]).toContain(x);
-      expect([0, last]).toContain(y);
-    }
-  });
-
-  it("starts each color clockwise from the previous one", () => {
-    const [blue, yellow, red] = variant.colors.map((c) => variant.corners[c]);
-    expect(blue).toEqual([0, 0]);
-    expect(yellow).toEqual([19, 0]);
-    if (red) expect(red).toEqual([19, 19]);
-  });
 });

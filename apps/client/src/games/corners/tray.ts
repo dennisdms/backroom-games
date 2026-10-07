@@ -193,7 +193,7 @@ const reasonText: Record<IllegalReason, string> = {
   "unknown-orientation": "That piece can't be turned that way.",
   "off-board": "The piece has to fit on the board.",
   occupied: "Those squares are taken.",
-  "misses-corner": "Your first piece has to cover your corner.",
+  "misses-corner": "Your first piece has to cover a corner.",
   "no-corner-contact": "It has to touch one of your pieces corner to corner.",
   "touches-own-edge": "It can't share an edge with your own pieces.",
   "can-still-place": "You can't pass while you can still place a piece.",

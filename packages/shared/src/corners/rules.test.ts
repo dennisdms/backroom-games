@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ORIENTATIONS } from "./pieces";
 import {
   applyMove,
+  boardCorners,
   checkMove,
   cornerCandidates,
   isGameOver,
@@ -90,6 +91,16 @@ const place = (pieceId: PieceId, x: number, y: number, orientation = 0): Move =>
 
 /** Blue has played its first piece, a monomino in its corner. */
 const blueStarted: { blue: Squares } = { blue: [[0, 0]] };
+
+/** Every board corner is taken by colors other than blue, so blue can't start. */
+const cornersTaken: Partial<Record<Color, Squares>> = {
+  yellow: [[0, 0]],
+  red: [[19, 19]],
+  green: [
+    [19, 0],
+    [0, 19],
+  ],
+};
 
 describe("placementSquares", () => {
   it("offsets the oriented shape by the placement's origin", () => {
@@ -201,29 +212,45 @@ describe("checkMove", () => {
       ["yellow", place("I3", 17, 0)],
       ["red", place("O4", 18, 18)],
       ["green", place("L4", 0, 17)],
-    ] as const)("allows %s to cover its starting corner", (color, move) => {
+    ] as const)("allows %s to cover a board corner", (color, move) => {
       expect(checkMove(game({}, color), color, move)).toEqual({ ok: true });
     });
 
-    it("rejects a first piece away from the corner", () => {
+    it.each([
+      [0, 0],
+      [19, 0],
+      [19, 19],
+      [0, 19],
+    ])("allows any color to start in corner (%i, %i)", (x, y) => {
+      expect(checkMove(game({}, "yellow"), "yellow", place("I1", x, y))).toEqual({ ok: true });
+    });
+
+    it("allows a first piece in the corner another color used to start from", () => {
+      // (0, 0) used to be blue's fixed corner; red may take it.
+      expect(checkMove(game({}, "red"), "red", place("O4", 0, 0))).toEqual({ ok: true });
+    });
+
+    it("rejects a first piece that covers no corner", () => {
       expect(checkMove(game(), "blue", place("I1", 1, 1))).toEqual({
         ok: false,
         reason: "misses-corner",
       });
-    });
-
-    it("rejects a first piece in another color's corner", () => {
-      expect(checkMove(game(), "blue", place("I1", 19, 19))).toEqual({
+      expect(checkMove(game(), "blue", place("I5", 5, 0))).toEqual({
         ok: false,
         reason: "misses-corner",
       });
     });
 
-    it("uses the variant's corners", () => {
-      const state = game();
-      state.variant = { ...state.variant, corners: { ...state.variant.corners, blue: [5, 5] } };
-      expect(isLegalMove(state, "blue", place("I1", 5, 5))).toBe(true);
-      expect(isLegalMove(state, "blue", place("I1", 0, 0))).toBe(false);
+    it("rejects a corner another color has taken", () => {
+      expect(checkMove(game({ yellow: [[19, 0]] }), "blue", place("I1", 19, 0))).toEqual({
+        ok: false,
+        reason: "occupied",
+      });
+    });
+
+    it("allows another empty corner when some are taken", () => {
+      const state = game({ yellow: [[19, 0]], red: [[0, 0]] });
+      expect(isLegalMove(state, "blue", place("I1", 0, 19))).toBe(true);
     });
   });
 
@@ -287,7 +314,7 @@ describe("checkMove", () => {
     });
 
     it("allows a pass when the color can't place", () => {
-      expect(checkMove(game({ yellow: [[0, 0]] }), "blue", { kind: "pass" })).toEqual({ ok: true });
+      expect(checkMove(game(cornersTaken), "blue", { kind: "pass" })).toEqual({ ok: true });
     });
 
     it("rejects a pass out of turn", () => {
@@ -315,14 +342,35 @@ const fillExcept = (state: CornersState, filler: Color, keep: Squares = []) => {
   return state;
 };
 
-describe("cornerCandidates", () => {
-  it("is the starting corner before the first piece", () => {
-    expect(cornerCandidates(game(), "blue")).toEqual([[0, 0]]);
-    expect(cornerCandidates(game(), "red")).toEqual([[19, 19]]);
+describe("boardCorners", () => {
+  it("is the four corner squares, sorted by y then x", () => {
+    expect(boardCorners(20)).toEqual([
+      [0, 0],
+      [19, 0],
+      [0, 19],
+      [19, 19],
+    ]);
   });
 
-  it("is empty before the first piece if the corner is taken", () => {
-    expect(cornerCandidates(game({ yellow: [[0, 0]] }), "blue")).toEqual([]);
+  it("has one square on a 1x1 board", () => {
+    expect(boardCorners(1)).toEqual([[0, 0]]);
+  });
+});
+
+describe("cornerCandidates", () => {
+  it("is every board corner before the first piece", () => {
+    for (const color of COLORS) expect(cornerCandidates(game(), color)).toEqual(boardCorners(20));
+  });
+
+  it("leaves out taken corners before the first piece", () => {
+    expect(cornerCandidates(game({ yellow: [[0, 0]], red: [[19, 19]] }), "blue")).toEqual([
+      [19, 0],
+      [0, 19],
+    ]);
+  });
+
+  it("is empty before the first piece if every corner is taken", () => {
+    expect(cornerCandidates(game(cornersTaken), "blue")).toEqual([]);
   });
 
   it("is the empty diagonals without an own edge after a piece", () => {
@@ -359,8 +407,12 @@ describe("legalMovesExist", () => {
     expect(legalMovesExist(game({}, "red"), "blue")).toBe(true);
   });
 
-  it("is false when the starting corner is taken", () => {
-    expect(legalMovesExist(game({ yellow: [[0, 0]] }), "blue")).toBe(false);
+  it("is true before the first piece while any corner is empty", () => {
+    expect(legalMovesExist(game({ yellow: [[0, 0]], red: [[19, 19]] }), "blue")).toBe(true);
+  });
+
+  it("is false before the first piece when every corner is taken", () => {
+    expect(legalMovesExist(game(cornersTaken), "blue")).toBe(false);
   });
 
   it("is false with no pieces left", () => {
@@ -425,10 +477,16 @@ describe("applyMove", () => {
   });
 
   it("skips a blocked color", () => {
-    // Blue starts in yellow's corner, so yellow can never start.
-    const state = game({ blue: [[19, 0]] });
-    state.variant = { ...state.variant, corners: { ...state.variant.corners, blue: [19, 0] } };
-    const after = applyMove(state, place("I1", 18, 1));
+    // Every corner is taken before yellow's first piece, so yellow can never start.
+    const state = game({
+      blue: [[0, 0]],
+      red: [
+        [19, 0],
+        [19, 19],
+      ],
+      green: [[0, 19]],
+    });
+    const after = applyMove(state, place("I1", 1, 1));
     expect(after.turn).toBe("red");
     expect(after.passes).toBe(1);
   });
@@ -448,7 +506,7 @@ describe("applyMove", () => {
 
   it("keeps lastPlaced on a pass", () => {
     const state: CornersState = {
-      ...game({ yellow: [[0, 0]] }),
+      ...game(cornersTaken),
       lastPlaced: { blue: "I1", yellow: "I2", red: null, green: null },
     };
     const after = applyMove(state, { kind: "pass" });

@@ -1,17 +1,23 @@
-import { applyMove, newGame, TWO_PLAYER } from "@backroom/shared";
+import { applyMove, boardCorners, newGame, TWO_PLAYER } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
 import { outlinePath, squareAt, startCorners } from "./board";
 
 describe("startCorners", () => {
-  it("lists each color's corner until its first piece covers it", () => {
+  const monomino = (x: number, y: number) =>
+    ({ kind: "place", pieceId: "I1", orientation: 0, x, y }) as const;
+
+  it("lists every empty corner for the color to move until its first piece is down", () => {
     const state = newGame(TWO_PLAYER);
-    expect(startCorners(state)).toEqual([
-      { color: "blue", square: TWO_PLAYER.corners.blue },
-      { color: "yellow", square: TWO_PLAYER.corners.yellow },
+    expect(startCorners(state)).toEqual(
+      boardCorners(20).map((square) => ({ color: "blue", square })),
+    );
+    const next = applyMove(state, monomino(19, 19));
+    expect(startCorners(next)).toEqual([
+      { color: "yellow", square: [0, 0] },
+      { color: "yellow", square: [19, 0] },
+      { color: "yellow", square: [0, 19] },
     ]);
-    const [x, y] = TWO_PLAYER.corners.blue;
-    const next = applyMove(state, { kind: "place", pieceId: "I1", orientation: 0, x, y });
-    expect(startCorners(next)).toEqual([{ color: "yellow", square: TWO_PLAYER.corners.yellow }]);
+    expect(startCorners(applyMove(next, monomino(0, 0)))).toEqual([]);
   });
 });
 

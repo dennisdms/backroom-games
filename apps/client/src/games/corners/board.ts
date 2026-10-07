@@ -4,6 +4,9 @@ import {
   COLORS,
   type Color,
   type CornersState,
+  cellOf,
+  cornerCandidates,
+  isGameOver,
   placementSquares,
   type Square,
 } from "@backroom/shared";
@@ -19,12 +22,14 @@ export type BoardOverlay = {
 
 export type BoardOptions = { overlay?: BoardOverlay | undefined };
 
-/** The colors in play whose starting corner is still empty, with that corner. */
+/**
+ * Where the color to move may start: the empty board corners, until its first
+ * piece is down. None for the other colors, and none once the game is over.
+ */
 export const startCorners = (state: CornersState): { color: Color; square: Square }[] => {
-  const { size, corners } = state.variant;
-  return state.variant.colors
-    .map((color) => ({ color, square: corners[color] }))
-    .filter(({ square: [x, y] }) => state.board[y * size + x] === 0);
+  const color = state.turn;
+  if (state.board.includes(cellOf(color)) || isGameOver(state)) return [];
+  return cornerCandidates(state, color).map((square) => ({ color, square }));
 };
 
 /**

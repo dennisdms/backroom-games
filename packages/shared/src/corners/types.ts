@@ -65,34 +65,20 @@ export const Move = z.discriminatedUnion("kind", [
 ]);
 export type Move = z.infer<typeof Move>;
 
-const Point = z.tuple([z.int().min(0), z.int().min(0)]);
-
 /** The board and seating for one way of playing. */
 export const Variant = z.object({
   size: z.int().min(1),
   /** The colors in play, in turn order. The others take no turns and don't score. */
   colors: z.array(Color),
-  /** The corner square each color must cover with its first piece. */
-  corners: z.record(Color, Point),
   /** The colors each seat controls, by seat index. */
   seats: z.array(z.array(Color)),
 });
 export type Variant = z.infer<typeof Variant>;
 
-const CLASSIC_CORNERS: Variant["corners"] = {
-  blue: [0, 0],
-  yellow: [19, 0],
-  red: [19, 19],
-  green: [0, 19],
-};
-
-/**
- * One color per player: the first `players` colors in turn order, so their
- * starting corners run clockwise from (0, 0), next to each other.
- */
+/** One color per player: the first `players` colors in turn order. */
 const onePerPlayer = (players: number): Variant => {
   const colors = COLORS.slice(0, players);
-  return { size: 20, colors, corners: CLASSIC_CORNERS, seats: colors.map((c) => [c]) };
+  return { size: 20, colors, seats: colors.map((c) => [c]) };
 };
 
 export const TWO_PLAYER: Variant = onePerPlayer(2);
