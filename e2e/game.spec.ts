@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { createRoom, seats, square } from "./helpers";
+import { createRoom, joinRoom, seats, square } from "./helpers";
 
 // Separate browser contexts share no storage, like two players on two devices.
 test("two players join by code and take turns placing pieces", async ({ browser }) => {
@@ -11,12 +11,7 @@ test("two players join by code and take turns placing pieces", async ({ browser 
   const code = await createRoom(host, "Ada");
   await expect(host.getByTestId("room-code")).toHaveText(code);
 
-  await guest.goto("/");
-  await guest.getByLabel("Room code").fill(code);
-  await guest.getByRole("button", { name: "Join room" }).click();
-  await expect(guest).toHaveURL(`/r/${code}`);
-  await guest.getByLabel("Your name").fill("Grace");
-  await guest.getByRole("button", { name: "Join", exact: true }).click();
+  await joinRoom(guest, code, "Grace");
   for (const page of [host, guest]) {
     await expect(seats(page)).toHaveCount(2);
   }

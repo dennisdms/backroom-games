@@ -1,4 +1,4 @@
-import { FOUR_PLAYER, type Move, newGame, THREE_PLAYER, TWO_PLAYER } from "@backroom/shared";
+import { FOUR_PLAYER, GAMES, type Move, newGame, THREE_PLAYER, TWO_PLAYER } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
 import { findGame, maxPlayers } from ".";
 import { corners } from "./corners";
@@ -20,6 +20,13 @@ describe("registry", () => {
     expect(findGame("chess")).toBeUndefined();
     expect(maxPlayers(corners)).toBe(4);
   });
+
+  it.each(GAMES.map((game) => [game.id, game] as const))(
+    "has a module for catalog game %s with the same player counts",
+    (id, game) => {
+      expect(findGame(id)?.playerCounts).toEqual(game.playerCounts);
+    },
+  );
 });
 
 describe("corners.init", () => {
@@ -27,6 +34,13 @@ describe("corners.init", () => {
     expect(corners.init([0, 1], undefined)).toEqual(newGame(TWO_PLAYER));
     expect(corners.init([0, 1, 2], undefined)).toEqual(newGame(THREE_PLAYER));
     expect(fourPlayers()).toEqual(newGame(FOUR_PLAYER));
+  });
+
+  it("can start with every player count it lists", () => {
+    for (const count of corners.playerCounts) {
+      const players = Array.from({ length: count }, (_, i) => i);
+      expect(() => corners.init(players, undefined)).not.toThrow();
+    }
   });
 
   it.each([[[0]], [[0, 1, 2, 3, 4]], [[0, 2]]])("rejects players %j", (players) => {

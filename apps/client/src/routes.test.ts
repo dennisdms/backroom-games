@@ -1,5 +1,6 @@
+import { CORNERS } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { normalizeCode, parseRoute, roomPath, withPlayer } from "./routes";
+import { createPath, normalizeCode, parseRoute, roomPath, withPlayer } from "./routes";
 
 describe("parseRoute", () => {
   it("routes / to the landing page", () => {
@@ -10,8 +11,14 @@ describe("parseRoute", () => {
     expect(parseRoute("/r/k7qxm")).toEqual({ name: "room", code: "K7QXM" });
   });
 
-  it("falls back to the landing page for unknown paths", () => {
+  it("routes /new/:game to the create form of a catalog game", () => {
+    expect(parseRoute(createPath("corners"))).toEqual({ name: "create", game: CORNERS });
+  });
+
+  it("falls back to the landing page for unknown paths and games", () => {
     expect(parseRoute("/nope")).toEqual({ name: "landing" });
+    expect(parseRoute("/new/chess")).toEqual({ name: "landing" });
+    expect(parseRoute("/new/__proto__")).toEqual({ name: "landing" });
   });
 });
 
