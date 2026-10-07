@@ -12,7 +12,7 @@ const monominoAt = (x: number, y: number): Move => ({
 });
 
 /** A four-player game where blue (seat 0) moves first. */
-const fourPlayers = () => corners.init([0, 1, 2, 3], undefined);
+const fourPlayers = () => corners.init([0, 1, 2, 3], {});
 
 describe("registry", () => {
   it("finds Corners by id and seats up to four", () => {
@@ -22,29 +22,30 @@ describe("registry", () => {
   });
 
   it.each(GAMES.map((game) => [game.id, game] as const))(
-    "has a module for catalog game %s with the same player counts",
+    "has a module for catalog game %s with the same player counts and options",
     (id, game) => {
       expect(findGame(id)?.playerCounts).toEqual(game.playerCounts);
+      expect(findGame(id)?.options).toEqual(game.options);
     },
   );
 });
 
 describe("corners.init", () => {
   it("picks the variant by player count", () => {
-    expect(corners.init([0, 1], undefined)).toEqual(newGame(TWO_PLAYER));
-    expect(corners.init([0, 1, 2], undefined)).toEqual(newGame(THREE_PLAYER));
+    expect(corners.init([0, 1], {})).toEqual(newGame(TWO_PLAYER));
+    expect(corners.init([0, 1, 2], {})).toEqual(newGame(THREE_PLAYER));
     expect(fourPlayers()).toEqual(newGame(FOUR_PLAYER));
   });
 
   it("can start with every player count it lists", () => {
     for (const count of corners.playerCounts) {
       const players = Array.from({ length: count }, (_, i) => i);
-      expect(() => corners.init(players, undefined)).not.toThrow();
+      expect(() => corners.init(players, {})).not.toThrow();
     }
   });
 
   it.each([[[0]], [[0, 1, 2, 3, 4]], [[0, 2]]])("rejects players %j", (players) => {
-    expect(() => corners.init(players, undefined)).toThrow(/can't seat/);
+    expect(() => corners.init(players, {})).toThrow(/can't seat/);
   });
 });
 
@@ -79,7 +80,7 @@ describe("corners.validate", () => {
   });
 
   it("goes back to the first seat after the last with fewer than four", () => {
-    let state = corners.init([0, 1, 2], undefined);
+    let state = corners.init([0, 1, 2], {});
     state = corners.apply(state, 0, monominoAt(0, 0)); // blue
     state = corners.apply(state, 1, monominoAt(19, 0)); // yellow
     state = corners.apply(state, 2, monominoAt(19, 19)); // red
@@ -113,9 +114,18 @@ describe("corners.apply", () => {
   });
 });
 
+describe("corners.forfeitTurn", () => {
+  it("moves the turn on to the next seat without placing", () => {
+    const after = corners.forfeitTurn(fourPlayers());
+    expect(after.turn).toBe("yellow");
+    expect(after.board).toEqual(fourPlayers().board);
+    expect(corners.validate(after, 1, monominoAt(19, 0))).toEqual({ ok: true });
+  });
+});
+
 describe("corners.result", () => {
   it("only ranks the seats playing", () => {
-    expect(corners.result(corners.init([0, 1], undefined))).toEqual([
+    expect(corners.result(corners.init([0, 1], {}))).toEqual([
       { player: 0, score: -89, rank: 1 },
       { player: 1, score: -89, rank: 1 },
     ]);
@@ -143,7 +153,7 @@ describe("corners.view", () => {
 describe("corners.colors", () => {
   it("gives each seat its variant colors", () => {
     expect(corners.colors(fourPlayers(), 2)).toEqual(["red"]);
-    expect(corners.colors(corners.init([0, 1], undefined), 1)).toEqual(["yellow"]);
+    expect(corners.colors(corners.init([0, 1], {}), 1)).toEqual(["yellow"]);
     expect(corners.colors(fourPlayers(), 7)).toEqual([]);
   });
 });

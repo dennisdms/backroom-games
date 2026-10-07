@@ -2,6 +2,7 @@ import {
   type ApiError,
   CreateRoomRequest,
   type CreateRoomResponse,
+  parseOptions,
   type RoomInfo,
 } from "@backroom/shared";
 import type { FastifyError, FastifyInstance } from "fastify";
@@ -27,10 +28,16 @@ export async function roomRoutes(app: FastifyInstance) {
     if (!game) {
       return reply.code(400).send({ error: "unknown_game" } satisfies ApiError);
     }
+    const options = parseOptions(game.options, body.data.options ?? {});
+    if (!options) {
+      return reply.code(400).send({ error: "invalid_options" } satisfies ApiError);
+    }
     const { room, player } = await app.rooms.create({
       gameId: body.data.game,
       maxPlayers: maxPlayers(game),
       name: body.data.name,
+      settings: body.data.settings,
+      options,
     });
     return reply
       .code(201)

@@ -1,4 +1,11 @@
-import type { Player, RoomState } from "@backroom/shared";
+import {
+  choiceLabel,
+  gameInfo,
+  type Player,
+  ROOM_SETTINGS,
+  type RoomState,
+  type SettingValue,
+} from "@backroom/shared";
 import { html, nothing } from "lit-html";
 
 /** UI-only lobby state: feedback for the copy button. */
@@ -27,7 +34,14 @@ export function startBlocker(room: RoomState): string | null {
   return `The game needs ${formatCounts(room.playerCounts)} players to start; there ${count === 1 ? "is" : "are"} ${count} ${noun}.`;
 }
 
-/** The room before the game: its code, who's in it, and the host's Start button. */
+/** The room's settings in a line: "Turn timer: 1 minute · Hints: off". */
+export function settingsSummary(room: RoomState): string {
+  const values: Record<string, SettingValue> = { ...room.settings, ...room.options };
+  const settings = [...ROOM_SETTINGS, ...(gameInfo(room.gameId)?.options ?? [])];
+  return settings.map((s) => `${s.label}: ${choiceLabel(s, values[s.key])}`).join(" · ");
+}
+
+/** The room before the game: its code, who's in it, its settings and the host's Start button. */
 export const lobby = (room: RoomState, l: LobbyLocal, a: LobbyActions) => html`
   <section class="lobby">
     <p class="room-code">
@@ -38,6 +52,7 @@ export const lobby = (room: RoomState, l: LobbyLocal, a: LobbyActions) => html`
     <ul class="seats" data-testid="seats">
       ${room.players.map((p) => seat(room, p))}
     </ul>
+    <p class="muted" data-testid="settings">${settingsSummary(room)}</p>
     ${room.you === room.host ? startButton(room, a) : html`<p class="muted">Waiting for the host to start.</p>`}
   </section>
 `;

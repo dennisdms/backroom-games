@@ -35,6 +35,24 @@ describe("RoomManager.create", () => {
     expect(await rooms.get(room.code)).toEqual(room);
   });
 
+  it("keeps the settings and options, with defaults for none", async () => {
+    const { rooms } = setup();
+    const plain = await rooms.create({ gameId: "stub", maxPlayers: 2, name: "Ada" });
+    expect(plain.room).toMatchObject({
+      settings: { turnTimer: 60 },
+      options: {},
+      turnEndsAt: null,
+    });
+    const picked = await rooms.create({
+      gameId: "stub",
+      maxPlayers: 2,
+      name: "Ada",
+      settings: { turnTimer: 0 },
+      options: { hints: true },
+    });
+    expect(picked.room).toMatchObject({ settings: { turnTimer: 0 }, options: { hints: true } });
+  });
+
   it("picks another code when one is taken", async () => {
     const { rooms } = setup({ codes: ["AAAAA", "AAAAA", "BBBBB"] });
     const first = await rooms.create({ gameId: "stub", maxPlayers: 2, name: "Ada" });
@@ -163,6 +181,25 @@ describe("RoomManager.update", () => {
     const { rooms } = setup();
     expect(await rooms.update("ZZZZZ", () => {})).toBeUndefined();
   });
+
+  it("saves nothing when the change returns false", async () => {
+    const { rooms } = setup();
+    const { room } = await rooms.create({ gameId: "stub", maxPlayers: 2, name: "Ada" });
+    const updated = await rooms.update(room.code, (r) => {
+      r.phase = "playing";
+      return false;
+    });
+    expect(updated).toBeUndefined();
+    expect(await rooms.get(room.code)).toEqual(room);
+  });
+
+  it("bumps the version but not the activity for an inactive change", async () => {
+    const { rooms, clock } = setup();
+    const { room } = await rooms.create({ gameId: "stub", maxPlayers: 2, name: "Ada" });
+    clock.advance(HOUR);
+    const updated = await rooms.update(room.code, () => {}, { active: false });
+    expect(updated).toMatchObject({ version: 1, lastActiveAt: room.lastActiveAt });
+  });
 });
 
 describe("idle expiry", () => {
@@ -179,8 +216,11 @@ describe("idle expiry", () => {
     clock.advance(ROOM_IDLE_MS - 12 * HOUR);
     expect(await rooms.sweep()).toEqual([]);
 
+    const swept: string[][] = [];
+    rooms.onSwept((codes) => swept.push(codes));
     clock.advance(1);
     expect(await rooms.sweep()).toEqual(["AAAAA"]);
+    expect(swept).toEqual([["AAAAA"]]);
     expect(await rooms.get("AAAAA")).toBeUndefined();
     expect(await rooms.get("BBBBB")).toBeDefined();
   });

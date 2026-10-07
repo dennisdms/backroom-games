@@ -15,12 +15,21 @@ import { type Client, Sessions } from "./sessions";
 // The game session protocol. Clients send intents; the server checks them with
 // the room's GameModule, saves the room (bumping its version) and sends every
 // connected player the whole new RoomState as they may see it.
+//
+// With a turn timer, every change in play (start, move, rematch) starts a new
+// turn clock. When it runs out, the server forfeits the turn through the
+// GameModule, which counts as a change of its own and starts the next clock.
 
 /** Connections that send no `ping` for this long are closed. */
 export const PING_TIMEOUT_MS = 60_000;
 
+/** A turn timer of `seconds` lasts this many milliseconds. */
+export const turnTimerMs = (seconds: number) => seconds * 1000;
+
 export interface WsOptions {
   pingTimeoutMs?: number;
+  /** How long a turn timer of `seconds` lasts, in milliseconds. Shorten it in tests. */
+  turnMs?: (seconds: number) => number;
 }
 
 /** A message the client got wrong. Sent back as `error`, never crashes the socket. */
@@ -58,9 +67,18 @@ export function warnBeforeClose(app: FastifyInstance) {
 
 export async function wsRoutes(
   app: FastifyInstance,
-  { pingTimeoutMs = PING_TIMEOUT_MS }: WsOptions,
+  { pingTimeoutMs = PING_TIMEOUT_MS, turnMs = turnTimerMs }: WsOptions,
 ) {
   const sessions = new Sessions();
+  /** The pending turn timeout of each room with a clock running. */
+  const clocks = new Map<string, ReturnType<typeof setTimeout>>();
+
+  app.rooms.onSwept((codes) => {
+    for (const code of codes) stopClock(code);
+  });
+  app.addHook("onClose", async () => {
+    for (const code of clocks.keys()) stopClock(code);
+  });
 
   app.get("/ws", { websocket: true }, (socket) => {
     const client: Client = { socket, at: null };
@@ -177,9 +195,59 @@ export async function wsRoutes(
   async function change(client: Client, mutate: Change) {
     const { at } = client;
     if (!at) throw new ClientError("not_in_room", "Send hello first");
-    const room = await app.rooms.update(at.code, (r) => mutate(r, gameOf(r), at.seat));
+    const room = await app.rooms.update(at.code, (r) => {
+      mutate(r, gameOf(r), at.seat);
+      restartClock(r);
+    });
     if (!room) throw new ClientError("room_not_found", joinErrors.room_not_found);
     broadcast(room);
+    schedule(room);
+  }
+
+  /** Sets the deadline for the turn starting now, or clears it outside play or without a timer. */
+  function restartClock(room: Room) {
+    const seconds = room.settings.turnTimer;
+    room.turnEndsAt =
+      room.phase === "playing" && seconds > 0 ? Date.now() + Math.round(turnMs(seconds)) : null;
+  }
+
+  /** Arms the timeout for `room`'s deadline, replacing any earlier one. */
+  function schedule(room: Room) {
+    stopClock(room.code);
+    if (room.turnEndsAt === null) return;
+    const { code, version } = room;
+    const timer = setTimeout(() => {
+      clocks.delete(code);
+      expire(code, version).catch((err: unknown) => app.log.error(err, "Turn timer failed"));
+    }, room.turnEndsAt - Date.now());
+    clocks.set(code, timer);
+  }
+
+  function stopClock(code: string) {
+    clearTimeout(clocks.get(code));
+    clocks.delete(code);
+  }
+
+  /**
+   * Forfeits the turn whose clock ran out, if the room is still at `version`:
+   * a move that landed first started a new turn (and clock), so then nothing
+   * happens. Not activity, so a game nobody plays still gets swept.
+   */
+  async function expire(code: string, version: number) {
+    const room = await app.rooms.update(
+      code,
+      (r) => {
+        if (r.version !== version || r.phase !== "playing") return false;
+        const game = gameOf(r);
+        r.game = game.forfeitTurn(r.game);
+        if (game.isOver(r.game)) r.phase = "finished";
+        restartClock(r);
+      },
+      { active: false },
+    );
+    if (!room) return;
+    broadcast(room);
+    schedule(room);
   }
 
   function leave(client: Client) {
@@ -214,7 +282,7 @@ function start(room: Room, game: GameModule) {
   }
   room.game = game.init(
     room.players.map((p) => p.seat),
-    undefined,
+    room.options,
   );
   room.phase = "playing";
 }

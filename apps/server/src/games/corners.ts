@@ -4,6 +4,7 @@ import {
   type CornersState,
   checkMove,
   FOUR_PLAYER,
+  forfeitTurn,
   isGameOver,
   Move,
   newGame,
@@ -35,7 +36,9 @@ const validate = (state: CornersState, player: PlayerId, move: Move): MoveCheck 
 export const corners: GameModule<CornersState, Move> = {
   id: CORNERS.id,
   playerCounts: CORNERS.playerCounts,
+  options: CORNERS.options,
 
+  // Hints only change what clients draw, so the rules take no options.
   init(players) {
     const variant = VARIANTS.get(players.length);
     if (!variant || players.some((player, i) => player !== i)) {
@@ -56,6 +59,9 @@ export const corners: GameModule<CornersState, Move> = {
     if (!check.ok) throw new Error(`Illegal move for seat ${player}: ${check.reason}`);
     return applyMove(state, move);
   },
+
+  // Moves on as a move would; the color plays again on its next turn.
+  forfeitTurn,
 
   isOver: isGameOver,
 

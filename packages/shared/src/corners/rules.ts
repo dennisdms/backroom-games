@@ -243,14 +243,35 @@ export const applyMove = (state: CornersState, move: Move): CornersState => {
     next = { ...next, passes: state.passes + 1 };
   }
 
+  return nextTurn(next);
+};
+
+/**
+ * The state after the color to move runs out of time: its turn is forfeited
+ * and play moves on as after a move, but nothing is placed. Unlike a pass, it
+ * says nothing about the color being blocked, so it plays again on its next
+ * turn; `passes` and `lastMove` stay as they were. Throws once the game is over.
+ */
+export const forfeitTurn = (state: CornersState): CornersState => {
+  if (isGameOver(state)) throw new Error("Can't forfeit a turn: the game is over");
+  return nextTurn(state);
+};
+
+/**
+ * Gives the turn to the next color after `state.turn` in `variant.colors` that
+ * can still place, counting each color skipped on the way as a pass. If none
+ * can, the turn just goes to the next color. The color that just moved comes
+ * last, so it moves again when everyone else is blocked.
+ */
+const nextTurn = (state: CornersState): CornersState => {
   const { colors } = state.variant;
-  const start = colors.indexOf(color);
-  let passes = next.passes;
+  const start = colors.indexOf(state.turn);
+  let passes = state.passes;
   for (let step = 1; step <= colors.length; step++) {
     const candidate = colors[(start + step) % colors.length];
     if (candidate === undefined) break;
-    if (legalMovesExist(next, candidate)) return { ...next, turn: candidate, passes };
+    if (legalMovesExist(state, candidate)) return { ...state, turn: candidate, passes };
     passes++;
   }
-  return { ...next, turn: colors[(start + 1) % colors.length] ?? color, passes };
+  return { ...state, turn: colors[(start + 1) % colors.length] ?? state.turn, passes };
 };

@@ -1,6 +1,6 @@
 import type { RoomState } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
-import { formatCounts, startBlocker } from "./lobby";
+import { formatCounts, settingsSummary, startBlocker } from "./lobby";
 
 const room = (players: number, playerCounts = [2, 4]): RoomState => ({
   code: "K7QXM",
@@ -15,6 +15,9 @@ const room = (players: number, playerCounts = [2, 4]): RoomState => ({
   host: 0,
   playerCounts,
   you: 0,
+  settings: { turnTimer: 60 },
+  options: { hints: false },
+  turnTimeLeft: null,
   game: null,
   version: 1,
 });
@@ -40,5 +43,15 @@ describe("startBlocker", () => {
     expect(startBlocker(room(3))).toBe(
       "The game needs 2 or 4 players to start; there are 3 players.",
     );
+  });
+});
+
+describe("settingsSummary", () => {
+  it("lists the room settings and the game's options", () => {
+    expect(settingsSummary(room(2))).toBe("Turn timer: 1 minute · Hints: off");
+    const picked: RoomState = { ...room(2), settings: { turnTimer: 30 }, options: { hints: true } };
+    expect(settingsSummary(picked)).toBe("Turn timer: 30 seconds · Hints: on");
+    const off: RoomState = { ...room(2), settings: { turnTimer: 0 } };
+    expect(settingsSummary(off)).toMatch(/^Turn timer: off ·/);
   });
 });

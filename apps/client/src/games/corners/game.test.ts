@@ -7,6 +7,7 @@ import {
 } from "@backroom/shared";
 import { describe, expect, it } from "vitest";
 import {
+  formatCountdown,
   gameTrayProps,
   newGameLocal,
   ordinal,
@@ -32,8 +33,24 @@ const roomFor = (game: CornersState, you: number, names: string[]): RoomState =>
   host: 0,
   playerCounts: [2, 3, 4],
   you,
+  settings: { turnTimer: 60 },
+  options: { hints: false },
+  turnTimeLeft: null,
   game,
   version: 1,
+});
+
+describe("formatCountdown", () => {
+  it("shows minutes and seconds, rounding up", () => {
+    expect(formatCountdown(300_000)).toBe("5:00");
+    expect(formatCountdown(60_000)).toBe("1:00");
+    expect(formatCountdown(59_001)).toBe("1:00");
+    expect(formatCountdown(42_000)).toBe("0:42");
+    expect(formatCountdown(9_500)).toBe("0:10");
+    expect(formatCountdown(1)).toBe("0:01");
+    expect(formatCountdown(0)).toBe("0:00");
+    expect(formatCountdown(-5)).toBe("0:00");
+  });
 });
 
 describe("trayColor", () => {
@@ -167,6 +184,13 @@ describe("viewedHand", () => {
     expect(gameTrayProps(room, state, l, actions)).toBeNull();
     viewSeat(room, l, 0);
     expect(gameTrayProps(room, state, l, actions)?.color).toBe("blue");
+  });
+
+  it("gives your tray the room's hints option", () => {
+    const l = newGameLocal();
+    expect(gameTrayProps(room, state, l, actions)?.hints).toBe(false);
+    const hinted = { ...room, options: { hints: true } };
+    expect(gameTrayProps(hinted, state, l, actions)?.hints).toBe(true);
   });
 
   it("is null for a seat that isn't playing", () => {

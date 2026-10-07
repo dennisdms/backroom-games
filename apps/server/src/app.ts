@@ -5,7 +5,7 @@ import { healthRoutes } from "./http/health";
 import { roomRoutes } from "./http/rooms";
 import { RoomManager } from "./rooms";
 import { InMemoryRoomStore } from "./store";
-import { PING_TIMEOUT_MS, warnBeforeClose, wsRoutes } from "./ws/socket";
+import { PING_TIMEOUT_MS, turnTimerMs, warnBeforeClose, wsRoutes } from "./ws/socket";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -21,6 +21,8 @@ export interface AppOptions {
   rooms?: RoomManager;
   /** Closes WebSockets that send no ping for this long. Shorten it in tests. */
   pingTimeoutMs?: number;
+  /** How long a turn timer of `seconds` lasts, in milliseconds. Shorten it in tests. */
+  turnMs?: (seconds: number) => number;
 }
 
 export async function buildApp({
@@ -28,6 +30,7 @@ export async function buildApp({
   staticDir = null,
   rooms = new RoomManager({ store: new InMemoryRoomStore() }),
   pingTimeoutMs = PING_TIMEOUT_MS,
+  turnMs = turnTimerMs,
 }: AppOptions = {}) {
   const app = Fastify({ logger: { level: logLevel } });
 
@@ -39,7 +42,7 @@ export async function buildApp({
   await app.register(fastifyWebsocket);
   await app.register(healthRoutes);
   await app.register(roomRoutes);
-  await app.register(wsRoutes, { pingTimeoutMs });
+  await app.register(wsRoutes, { pingTimeoutMs, turnMs });
 
   if (staticDir) {
     await app.register(fastifyStatic, { root: staticDir });

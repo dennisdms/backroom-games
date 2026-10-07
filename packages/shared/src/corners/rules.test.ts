@@ -5,6 +5,7 @@ import {
   boardCorners,
   checkMove,
   cornerCandidates,
+  forfeitTurn,
   isGameOver,
   isLegalMove,
   legalMovesExist,
@@ -514,6 +515,52 @@ describe("applyMove", () => {
     expect(after.lastMove).toEqual({ color: "blue", move: { kind: "pass" } });
     expect(after.turn).toBe("yellow");
     expect(after.passes).toBe(1);
+  });
+});
+
+describe("forfeitTurn", () => {
+  it("moves the turn on without placing anything", () => {
+    const state = applyMove(newGame(FOUR_PLAYER), place("I1", 0, 0));
+    const after = forfeitTurn(state);
+    expect(after.turn).toBe("red");
+    expect(after.board).toEqual(state.board);
+    expect(after.remaining).toEqual(state.remaining);
+    expect(after.lastMove).toEqual(state.lastMove);
+    expect(after.passes).toBe(0);
+  });
+
+  it("isn't a pass: the color plays again on its next turn", () => {
+    let state = newGame(TWO_PLAYER);
+    state = forfeitTurn(state);
+    expect(state.turn).toBe("yellow");
+    state = applyMove(state, place("I1", 19, 0));
+    expect(state.turn).toBe("blue");
+  });
+
+  it("skips blocked colors like a move does", () => {
+    const state = game({
+      blue: [[0, 0]],
+      red: [
+        [19, 0],
+        [19, 19],
+      ],
+      green: [[0, 19]],
+    });
+    const after = forfeitTurn(state);
+    expect(after.turn).toBe("red");
+    expect(after.passes).toBe(1);
+  });
+
+  it("gives the turn back when everyone else is blocked", () => {
+    const state = game({ green: [[0, 19]] }, "green");
+    state.remaining = { ...state.remaining, blue: [], yellow: [], red: [] };
+    expect(forfeitTurn(state).turn).toBe("green");
+  });
+
+  it("throws once the game is over", () => {
+    const state = newGame(FOUR_PLAYER);
+    state.remaining = { blue: [], yellow: [], red: [], green: [] };
+    expect(() => forfeitTurn(state)).toThrow(/over/);
   });
 });
 

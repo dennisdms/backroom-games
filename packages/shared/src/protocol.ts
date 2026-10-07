@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Color, CornersState, Placement } from "./corners/types";
+import { GameOptions, RoomSettings } from "./games";
 
 // WebSocket messages, shared by client and server. Every message is JSON with
 // a `type` discriminator. To add a message, add its schema to the matching
@@ -29,6 +30,16 @@ export const RoomState = z.object({
   playerCounts: z.array(z.int().min(1)),
   /** The receiving player's seat. */
   you: Seat,
+  /** The settings the host picked when creating the room. */
+  settings: RoomSettings,
+  /** The game's options (`GameInfo.options`), every one present. */
+  options: GameOptions,
+  /**
+   * Milliseconds left for the player to move when the server sent this, or
+   * null without a turn timer or outside play. Clients count down from when
+   * it arrived, since their clock may differ from the server's.
+   */
+  turnTimeLeft: z.int().min(0).nullable(),
   /** Null in the lobby. */
   game: CornersState.nullable(),
   /** Increases with every change, so clients can drop stale states. */
