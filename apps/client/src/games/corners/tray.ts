@@ -285,7 +285,7 @@ export const cornersTray = (props: TrayProps): { board: TemplateResult; side: Te
         aria-keyshortcuts="E"
         title="Rotate left"
       >
-        ⟲ <span class="label">Rotate</span> ${keyCap("E")}
+        ${icon("rotate-left")} <span class="label">Rotate</span> ${keyCap("E")}
       </button>
       <button
         ?disabled=${!piece}
@@ -294,10 +294,10 @@ export const cornersTray = (props: TrayProps): { board: TemplateResult; side: Te
         aria-keyshortcuts="R"
         title="Rotate right"
       >
-        ⟳ <span class="label">Rotate</span> ${keyCap("R")}
+        ${icon("rotate-right")} <span class="label">Rotate</span> ${keyCap("R")}
       </button>
       <button ?disabled=${!piece} @click=${run("flip")} aria-label="Flip" aria-keyshortcuts="F">
-        ⇋ Flip ${keyCap("F")}
+        ${icon("flip")} Flip ${keyCap("F")}
       </button>
     </div>
     <p class="corners-status" aria-live="polite">${status}</p>
@@ -322,6 +322,26 @@ export const cornersTray = (props: TrayProps): { board: TemplateResult; side: Te
 
   return { board, side };
 };
+
+const iconPaths = {
+  "rotate-left": "M3.5 9.5A5 5 0 1 0 5 4.2M4.6 1.2v3.3h3.3",
+  "rotate-right": "M12.5 9.5A5 5 0 1 1 11 4.2M11.4 1.2v3.3H8.1",
+  flip: "M8 1.5v13M6 4 2 12h4zM10 4l4 8h-4z",
+} as const;
+
+/** A control's icon: a few square-capped strokes, drawn in the text color. */
+const icon = (name: keyof typeof iconPaths) => html`<svg
+  class="icon"
+  viewBox="0 0 16 16"
+  width="16"
+  height="16"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.75"
+  aria-hidden="true"
+>
+  <path d=${iconPaths[name]} />
+</svg>`;
 
 /** A control's hotkey as a key cap. CSS hides it on touch-only devices. */
 const keyCap = (key: string) => html`<kbd class="key-cap" aria-hidden="true">${key}</kbd>`;

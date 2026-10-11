@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@backroom/shared": "workspace:*",
+    "@fontsource/barlow": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0",
     "lit-html": "3.3.3"
   },
   "devDependencies": {

@@ -8,6 +8,7 @@ import {
   type SettingValue,
 } from "@backroom/shared";
 import { html, nothing } from "lit-html";
+import { gameMark } from "../games/marks";
 import { createPath } from "../routes";
 
 /** A form request in flight, or the one an error belongs to. */
@@ -31,50 +32,55 @@ export interface LandingActions {
 
 /** The landing page: join a room by code, or pick a game to create one. */
 export const landing = (games: readonly GameInfo[], f: Forms, a: LandingActions) => html`
-  <h1>Backroom Games</h1>
-  <p>Board games for the backroom. Create a room, share the code, play with friends.</p>
+  <header class="landing-head">
+    <h1>Backroom Games</h1>
+  </header>
 
-  <form class="entry-card join-card" @submit=${submit(a.onJoin)}>
-    <h2>Join a room</h2>
-    <div class="join-fields">
-      ${nameField(f, a.onName)}
-      <label>
-        Room code
-        <input
-          class="code-input"
-          name="code"
-          required
-          maxlength="12"
-          autocomplete="off"
-          autocapitalize="characters"
-          spellcheck="false"
-          placeholder="K7QXM"
-          .value=${f.code}
-          @input=${(e: Event) => a.onCode(inputValue(e))}
-        />
-      </label>
-      <button type="submit" ?disabled=${f.pending !== null}>
-        ${f.pending === "join" ? "Joining…" : "Join"}
-      </button>
-    </div>
-    ${formError(f, "join")}
-  </form>
+  <div class="landing-grid">
+    <form class="sheet join-card" @submit=${submit(a.onJoin)}>
+      <h2>Join a room</h2>
+      <div class="join-fields">
+        ${nameField(f, a.onName)}
+        <label>
+          Room code
+          <input
+            class="code-input"
+            name="code"
+            required
+            maxlength="12"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="K7QXM"
+            .value=${f.code}
+            @input=${(e: Event) => a.onCode(inputValue(e))}
+          />
+        </label>
+        <button type="submit" class="primary" ?disabled=${f.pending !== null}>
+          ${f.pending === "join" ? "Joining…" : "Join"}
+        </button>
+      </div>
+      ${formError(f, "join")}
+    </form>
 
-  <section class="create" aria-labelledby="create-heading">
-    <h2 id="create-heading">Create a room</h2>
-    <ul class="game-list">
-      ${games.map(
-        (game) => html`
-          <li>
-            <a class="game-card" href=${createPath(game.id)}>
-              <span class="game-name">${game.name}</span>
-              ${players(game)}
-            </a>
-          </li>
-        `,
-      )}
-    </ul>
-  </section>
+    <section class="create" aria-labelledby="create-heading">
+      <h2 id="create-heading">Create a room</h2>
+      <ul class="game-list">
+        ${games.map(
+          (game) => html`
+            <li>
+              <a class="game-row" href=${createPath(game.id)}>
+                ${gameMark(game.id)}
+                <span class="game-name">${game.name}</span>
+                ${players(game)}
+                ${arrow("right")}
+              </a>
+            </li>
+          `,
+        )}
+      </ul>
+    </section>
+  </div>
 `;
 
 export interface CreateFormActions {
@@ -88,13 +94,15 @@ export interface CreateFormActions {
  * room has and the game's own options.
  */
 export const createForm = (game: GameInfo, f: Forms, a: CreateFormActions) => html`
-  <p><a href="/" class="back"><span aria-hidden="true">←</span> All games</a></p>
-  <form class="entry-card create-form" @submit=${submit(a.onCreate)}>
-    <h1>New ${game.name} room</h1>
-    ${players(game)}
+  <p><a href="/" class="back">${arrow("left")} All games</a></p>
+  <form class="sheet create-form" @submit=${submit(a.onCreate)}>
+    <div class="sheet-head">
+      <h1>New ${game.name} room</h1>
+      ${players(game)}
+    </div>
     ${nameField(f, a.onName)}
     ${[...ROOM_SETTINGS, ...game.options].map((s) => settingField(s, f, a))}
-    <button type="submit" ?disabled=${f.pending !== null}>
+    <button type="submit" class="primary" ?disabled=${f.pending !== null}>
       ${f.pending === "create" ? "Creating…" : "Create room"}
     </button>
     ${formError(f, "create")}
@@ -127,6 +135,20 @@ const settingField = (setting: Setting, f: Forms, a: CreateFormActions) => {
 };
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** A plain arrow, drawn to match the person icon. */
+export const arrow = (way: "left" | "right") => html`<svg
+  class="arrow"
+  viewBox="0 0 16 16"
+  width="16"
+  height="16"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  aria-hidden="true"
+>
+  <path d=${way === "right" ? "M2 8h11M9 4l4 4-4 4" : "M14 8H3M7 4 3 8l4 4"} />
+</svg>`;
 
 /** A small person icon and the player range, e.g. "2–4", read as "2 to 4 players". */
 const players = (game: GameInfo) => html`

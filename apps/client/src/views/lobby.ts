@@ -8,7 +8,7 @@ import {
 } from "@backroom/shared";
 import { html, nothing } from "lit-html";
 
-/** UI-only lobby state: feedback for the copy button. */
+/** UI-only lobby state: feedback for the room's Copy link button. */
 export interface LobbyLocal {
   copy: "idle" | "copied" | "failed";
 }
@@ -41,23 +41,19 @@ export function settingsSummary(room: RoomState): string {
   return settings.map((s) => `${s.label}: ${choiceLabel(s, values[s.key])}`).join(" · ");
 }
 
-/** The room before the game: its code, who's in it, its settings and the host's Start button. */
-export const lobby = (room: RoomState, l: LobbyLocal, a: LobbyActions) => html`
-  <section class="lobby">
-    <p class="room-code">
-      Code <strong data-testid="room-code">${room.code}</strong>
-      <button type="button" @click=${a.onCopy}>Copy link</button>
-      <span class="muted" role="status">${copyText[l.copy]}</span>
-    </p>
+/** The room before the game: who's in it, its settings and the host's Start button. */
+export const lobby = (room: RoomState, a: LobbyActions) => html`
+  <section class="lobby" aria-labelledby="players-heading">
+    <h2 id="players-heading">Players</h2>
     <ul class="seats" data-testid="seats">
       ${room.players.map((p) => seat(room, p))}
     </ul>
     <p class="muted" data-testid="settings">${settingsSummary(room)}</p>
-    ${room.you === room.host ? startButton(room, a) : html`<p class="muted">Waiting for the host to start.</p>`}
+    ${room.you === room.host ? startButton(room, a) : html`<p class="waiting">Waiting for the host to start.</p>`}
   </section>
 `;
 
-const copyText: Record<LobbyLocal["copy"], string> = {
+export const copyText: Record<LobbyLocal["copy"], string> = {
   idle: "",
   copied: "Copied",
   failed: "Couldn't copy; share the code instead.",
@@ -65,6 +61,7 @@ const copyText: Record<LobbyLocal["copy"], string> = {
 
 const seat = (room: RoomState, p: Player) => html`
   <li class="seat ${p.online ? "online" : "offline"}" data-seat=${p.seat}>
+    <span class="seat-number" aria-hidden="true">${p.seat + 1}</span>
     <span class="presence" title=${p.online ? "Online" : "Offline"}></span>
     <span class="seat-name">${p.name}</span>
     ${p.seat === room.you ? html`<span class="muted">(you)</span>` : nothing}
@@ -82,7 +79,7 @@ const startButton = (room: RoomState, a: LobbyActions) => {
   const blocker = startBlocker(room);
   return html`
     <p>
-      <button type="button" class="start" ?disabled=${blocker !== null} @click=${a.onStart}>
+      <button type="button" class="primary start" ?disabled=${blocker !== null} @click=${a.onStart}>
         Start
       </button>
     </p>
