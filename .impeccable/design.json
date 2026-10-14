@@ -1,0 +1,593 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T12:00:00Z",
+  "title": "Design System: Backroom Games",
+  "extensions": {
+    "colorMeta": {
+      "answer-sheet": {
+        "role": "neutral",
+        "displayName": "Answer Sheet",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262626",
+          "#454545",
+          "#666666",
+          "#898989",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ],
+        "mode": "light"
+      },
+      "print-ink": {
+        "role": "primary",
+        "displayName": "Print Ink",
+        "canonical": "#14191b",
+        "tonalRamp": [
+          "#080c0e",
+          "#222729",
+          "#414648",
+          "#626769",
+          "#868a8b",
+          "#abaeb0",
+          "#cfd1d3",
+          "#eceff0"
+        ],
+        "mode": "light"
+      },
+      "chalkboard-slate": {
+        "role": "neutral",
+        "displayName": "Chalkboard Slate",
+        "canonical": "#1e292d",
+        "tonalRamp": [
+          "#050d10",
+          "#1d282c",
+          "#3d474b",
+          "#5e686c",
+          "#828b8e",
+          "#a8afb2",
+          "#ccd2d5",
+          "#eaeff2"
+        ],
+        "mode": "dark"
+      },
+      "chalk": {
+        "role": "primary",
+        "displayName": "Chalk",
+        "canonical": "#f1f0ea",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#272625",
+          "#454543",
+          "#676663",
+          "#8a8985",
+          "#afaea9",
+          "#d2d1cc",
+          "#f0efe9"
+        ],
+        "mode": "dark"
+      },
+      "corners-blue": {
+        "role": "game",
+        "displayName": "Corners Blue (sheet)",
+        "canonical": "#2f6fdb",
+        "tonalRamp": [
+          "#000039",
+          "#001d65",
+          "#083e94",
+          "#2460c5",
+          "#4986ec",
+          "#76adff",
+          "#9fd2ff",
+          "#c1f0ff"
+        ],
+        "mode": "light",
+        "scope": "corners"
+      },
+      "corners-yellow": {
+        "role": "game",
+        "displayName": "Corners Yellow (sheet)",
+        "canonical": "#e8b923",
+        "tonalRamp": [
+          "#160800",
+          "#362300",
+          "#5a4100",
+          "#806100",
+          "#a98400",
+          "#d4a815",
+          "#f8cb4b",
+          "#ffea7b"
+        ],
+        "mode": "light",
+        "scope": "corners"
+      },
+      "corners-red": {
+        "role": "game",
+        "displayName": "Corners Red (sheet)",
+        "canonical": "#d6453d",
+        "tonalRamp": [
+          "#2b0000",
+          "#550000",
+          "#830e10",
+          "#b32f2a",
+          "#e0544a",
+          "#ff8276",
+          "#ffac9f",
+          "#ffcec1"
+        ],
+        "mode": "light",
+        "scope": "corners"
+      },
+      "corners-green": {
+        "role": "game",
+        "displayName": "Corners Green (sheet)",
+        "canonical": "#2f9a50",
+        "tonalRamp": [
+          "#001300",
+          "#003304",
+          "#00551e",
+          "#157a39",
+          "#3aa058",
+          "#6ec482",
+          "#9ae6a9",
+          "#beffca"
+        ],
+        "mode": "light",
+        "scope": "corners"
+      },
+      "corners-marker-blue": {
+        "role": "game",
+        "displayName": "Corners Blue (chalkboard)",
+        "canonical": "#4a86f2",
+        "tonalRamp": [
+          "#000233",
+          "#00205e",
+          "#15408c",
+          "#2f61bd",
+          "#4985f0",
+          "#74acff",
+          "#9dd1ff",
+          "#bfefff"
+        ],
+        "mode": "dark",
+        "scope": "corners"
+      },
+      "corners-marker-yellow": {
+        "role": "game",
+        "displayName": "Corners Yellow (chalkboard)",
+        "canonical": "#f2c230",
+        "tonalRamp": [
+          "#150800",
+          "#362300",
+          "#594100",
+          "#806100",
+          "#a98400",
+          "#d3a81f",
+          "#facb43",
+          "#ffe976"
+        ],
+        "mode": "dark",
+        "scope": "corners"
+      },
+      "corners-marker-red": {
+        "role": "game",
+        "displayName": "Corners Red (chalkboard)",
+        "canonical": "#ec5a50",
+        "tonalRamp": [
+          "#280000",
+          "#520000",
+          "#7f1816",
+          "#af352f",
+          "#e0534a",
+          "#ff7f72",
+          "#ffa99b",
+          "#ffcbbd"
+        ],
+        "mode": "dark",
+        "scope": "corners"
+      },
+      "corners-marker-green": {
+        "role": "game",
+        "displayName": "Corners Green (chalkboard)",
+        "canonical": "#43b267",
+        "tonalRamp": [
+          "#001300",
+          "#00320a",
+          "#005523",
+          "#1a7a3e",
+          "#37a15a",
+          "#63c77f",
+          "#91e9a7",
+          "#b5ffc8"
+        ],
+        "mode": "dark",
+        "scope": "corners"
+      },
+      "danger-print": {
+        "role": "status",
+        "displayName": "Danger Print",
+        "canonical": "#b8322b",
+        "tonalRamp": [
+          "#2c0000",
+          "#560000",
+          "#830b0d",
+          "#b32f28",
+          "#d75d52",
+          "#f88a7d",
+          "#ffb2a5",
+          "#ffd4c7"
+        ],
+        "mode": "light"
+      },
+      "danger-chalk": {
+        "role": "status",
+        "displayName": "Danger Chalk",
+        "canonical": "#ff8a80",
+        "tonalRamp": [
+          "#200000",
+          "#461210",
+          "#702d29",
+          "#9c4943",
+          "#ca6860",
+          "#fb877e",
+          "#ffaea4",
+          "#ffcfc5"
+        ],
+        "mode": "dark"
+      },
+      "sheet-wash": {
+        "role": "neutral",
+        "displayName": "Sheet Wash",
+        "canonical": "color-mix(in oklab, var(--ink) 6%, var(--ground))",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262626",
+          "#454545",
+          "#666666",
+          "#898989",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ],
+        "mode": "light"
+      },
+      "sheet-grid": {
+        "role": "neutral",
+        "displayName": "Sheet Grid",
+        "canonical": "color-mix(in oklab, var(--ink) 18%, var(--ground))",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262627",
+          "#444545",
+          "#656667",
+          "#88898a",
+          "#adaeaf",
+          "#d0d1d2",
+          "#eeeeef"
+        ],
+        "mode": "light"
+      },
+      "chalk-soft": {
+        "role": "neutral",
+        "displayName": "Chalk Soft",
+        "canonical": "color-mix(in oklab, var(--ink) 68%, var(--ground))",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#252726",
+          "#434644",
+          "#646765",
+          "#878a87",
+          "#abafac",
+          "#ced2cf",
+          "#ecefed"
+        ],
+        "mode": "dark"
+      },
+      "chalk-rule": {
+        "role": "neutral",
+        "displayName": "Chalk Rule",
+        "canonical": "color-mix(in oklab, var(--ink) 22%, var(--ground))",
+        "tonalRamp": [
+          "#070c0e",
+          "#20282a",
+          "#3d4749",
+          "#5e686a",
+          "#828b8d",
+          "#a8b0b1",
+          "#cbd2d4",
+          "#e9f0f1"
+        ],
+        "mode": "dark"
+      },
+      "slate-wash": {
+        "role": "neutral",
+        "displayName": "Slate Wash",
+        "canonical": "color-mix(in oklab, var(--ink) 6%, var(--ground))",
+        "tonalRamp": [
+          "#060c0f",
+          "#1f282c",
+          "#3d474b",
+          "#5f686b",
+          "#828b8e",
+          "#a8afb2",
+          "#ccd2d5",
+          "#eaeff2"
+        ],
+        "mode": "dark"
+      },
+      "slate-grid": {
+        "role": "neutral",
+        "displayName": "Slate Grid",
+        "canonical": "color-mix(in oklab, var(--ink) 15%, var(--ground))",
+        "tonalRamp": [
+          "#060c0e",
+          "#20282b",
+          "#3d474a",
+          "#5f686b",
+          "#828b8d",
+          "#a8afb2",
+          "#ccd2d4",
+          "#eaf0f1"
+        ],
+        "mode": "dark"
+      },
+      "ok-print": {
+        "role": "status",
+        "displayName": "Ok (sheet)",
+        "canonical": "#2f9a50",
+        "tonalRamp": [
+          "#001300",
+          "#003304",
+          "#00551e",
+          "#157a39",
+          "#3aa058",
+          "#6ec482",
+          "#9ae6a9",
+          "#beffca"
+        ],
+        "mode": "light"
+      },
+      "ok-chalk": {
+        "role": "status",
+        "displayName": "Ok (chalkboard)",
+        "canonical": "#43b267",
+        "tonalRamp": [
+          "#001300",
+          "#00320a",
+          "#005523",
+          "#1a7a3e",
+          "#37a15a",
+          "#63c77f",
+          "#91e9a7",
+          "#b5ffc8"
+        ],
+        "mode": "dark"
+      },
+      "waiting-print": {
+        "role": "status",
+        "displayName": "Waiting (sheet)",
+        "canonical": "#d99a00",
+        "mode": "light"
+      },
+      "waiting-chalk": {
+        "role": "status",
+        "displayName": "Waiting (chalkboard)",
+        "canonical": "#f2c230",
+        "tonalRamp": [
+          "#150800",
+          "#362300",
+          "#594100",
+          "#806100",
+          "#a98400",
+          "#d3a81f",
+          "#facb43",
+          "#ffe976"
+        ],
+        "mode": "dark"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The landing wordmark only; uppercase."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The room code on the room page."
+      },
+      "score": {
+        "displayName": "Score",
+        "purpose": "Scoreboard numerals in the seat colour, 1.75rem under 30rem; game names and the winner line share the weight."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Page and section headings, uppercase, 1.5-2.25rem."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels, turn line, tags, key caps; uppercase, tracked 0.06-0.14em."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Sentences and names."
+      },
+      "body-strong": {
+        "displayName": "Body Strong",
+        "purpose": "Button text, errors, the current player's name."
+      }
+    },
+    "shadows": [
+      {
+        "name": "selected-slot-ring",
+        "value": "inset 0 0 0 2px var(--ink)",
+        "purpose": "Thickens the box of the selected tray piece; the only shadow in the system, never a lift."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Scoreboard re-rank slide and the game-row arrow."
+      },
+      {
+        "name": "rank-slide",
+        "value": "420ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Rows slide from their old rank to the new one (FLIP); skipped under prefers-reduced-motion."
+      },
+      {
+        "name": "arrow-nudge",
+        "value": "translate 4px 0, 200ms ease-out",
+        "purpose": "Landing game-row arrow on hover, motion allowed only."
+      },
+      {
+        "name": "wash",
+        "value": "background-color 120ms ease-out",
+        "purpose": "Hover wash on buttons and rows."
+      },
+      {
+        "name": "press",
+        "value": "translate 0 1px",
+        "purpose": "Button active state."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-narrow",
+        "value": "30rem"
+      },
+      {
+        "name": "join-stack",
+        "value": "36rem"
+      },
+      {
+        "name": "room-head-wrap",
+        "value": "40rem"
+      },
+      {
+        "name": "padding",
+        "value": "48rem"
+      },
+      {
+        "name": "game-two-column",
+        "value": "56rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default control: a 2px ink box on the ground.",
+      "html": "<button class=\"ds-btn\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"square\" aria-hidden=\"true\"><path d=\"M8 1.5v13M6 4 2 12h4zM10 4l4 8h-4z\"/></svg>Flip</button>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;min-height:2.75rem;padding:0 1rem;border:2px solid var(--ink,#14191b);border-radius:0;background:transparent;color:var(--ink,#14191b);font:600 1rem/1.2 var(--body,Barlow,system-ui,sans-serif);cursor:pointer;transition:background-color 120ms ease-out} .ds-btn:hover:not(:disabled){background:var(--cell,#efefef)} .ds-btn:active:not(:disabled){translate:0 1px} .ds-btn:focus-visible{outline:3px solid var(--ink,#14191b);outline-offset:2px} .ds-btn:disabled{opacity:0.4;cursor:default}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one forward action on a screen: ink fill, ground text.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Join</button>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;min-height:2.75rem;padding:0 1rem;border:2px solid var(--ink,#14191b);border-radius:0;background:transparent;color:var(--ink,#14191b);font:600 1rem/1.2 var(--body,Barlow,system-ui,sans-serif);cursor:pointer;transition:background-color 120ms ease-out} .ds-btn:hover:not(:disabled){background:var(--cell,#efefef)} .ds-btn:active:not(:disabled){translate:0 1px} .ds-btn:focus-visible{outline:3px solid var(--ink,#14191b);outline-offset:2px} .ds-btn:disabled{opacity:0.4;cursor:default} .ds-btn-primary{background:var(--ink,#14191b);color:var(--ground,#fff)} .ds-btn-primary:hover:not(:disabled){background:color-mix(in oklab,var(--ink,#14191b) 86%,var(--ground,#fff))}"
+    },
+    {
+      "name": "Labelled Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Condensed uppercase label over a 2px ink box; the room code types in condensed capitals.",
+      "html": "<label class=\"ds-label\">Room code<input class=\"ds-input ds-code\" placeholder=\"K7QXM\"></label>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-label{display:flex;flex-direction:column;gap:0.375rem;font-family:var(--display);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink)} .ds-input{box-sizing:border-box;width:100%;min-height:3rem;padding:0.5rem 0.75rem;border:2px solid var(--ink);border-radius:0;background:var(--ground);color:var(--ink);font:400 1rem var(--body)} .ds-input:focus-visible{outline:3px solid var(--ink);outline-offset:2px} .ds-code{font-family:var(--display);font-size:1.375rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase} .ds-code::placeholder{font-weight:400;color:var(--ink-soft)}"
+    },
+    {
+      "name": "Wordmark Bar",
+      "kind": "nav",
+      "description": "The site bar: only the wordmark, underlined on hover.",
+      "html": "<nav class=\"ds-bar\"><a class=\"ds-wordmark\" href=\"#\">Backroom Games</a></nav>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-bar{padding:1rem 0 0.25rem} .ds-wordmark{color:var(--ink);font-family:var(--display);font-size:1.125rem;font-weight:800;letter-spacing:0.1em;text-decoration:none;text-transform:uppercase;text-underline-offset:0.2em} .ds-wordmark:hover{text-decoration:underline;text-decoration-thickness:2px} .ds-wordmark:focus-visible{outline:3px solid var(--ink);outline-offset:2px}"
+    },
+    {
+      "name": "Sheet",
+      "kind": "card",
+      "refersTo": "sheet",
+      "description": "A ruled panel like a box on the answer sheet.",
+      "html": "<section class=\"ds-sheet\"><h2>Join a room</h2><p>Enter the code your host shared.</p></section>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-sheet{display:flex;flex-direction:column;gap:1rem;padding:1.5rem;border:2px solid var(--ink);color:var(--ink);font-family:var(--body)} .ds-sheet h2{margin:0;font:800 1.75rem/1 var(--display);letter-spacing:0.06em;text-transform:uppercase} .ds-sheet p{margin:0}"
+    },
+    {
+      "name": "Gain Chip",
+      "kind": "chip",
+      "refersTo": "gain-chip",
+      "description": "Points the last move earned, in the seat colour, until the next move.",
+      "html": "<span class=\"ds-gain\" style=\"--seat-color:var(--color-green)\">+4</span>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-gain{padding:0 0.3rem;border:2px solid var(--seat-color);background:color-mix(in oklab,var(--seat-color) 28%,var(--ground));color:var(--ink);font:600 0.9375rem var(--display);font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Scoreboard",
+      "kind": "custom",
+      "refersTo": "your-move-mark",
+      "description": "Signature: the ranked live scoreboard with large numerals in seat colours and the reserved YOUR MOVE mark; rows slide when the ranking changes.",
+      "html": "<ol class=\"ds-scores\"><li class=\"ds-score\" style=\"--seat-color:var(--color-green)\"><span class=\"ds-rank\">1</span><span class=\"ds-swatch\"></span><span>Priya</span><span class=\"ds-gain\">+4</span><span class=\"ds-points\">85</span></li><li class=\"ds-score ds-pressed\" style=\"--seat-color:var(--color-blue)\"><span class=\"ds-rank\">2</span><span class=\"ds-swatch\"></span><strong>Dennis</strong><span class=\"ds-move\">Your move</span><span class=\"ds-points\">80</span></li></ol>",
+      "css": ":host{--ground:#ffffff;--ink:#14191b;--cell:color-mix(in oklab,var(--ink) 6%,var(--ground));--rule:var(--ink);--ink-soft:var(--ink);--display:'Barlow Condensed','Arial Narrow',sans-serif;--body:Barlow,system-ui,sans-serif;--color-blue:#2f6fdb;--color-yellow:#e8b923;--color-red:#d6453d;--color-green:#2f9a50;--ease-out:cubic-bezier(0.16,1,0.3,1)} .ds-scores{margin:0;padding:0;list-style:none;border-top:2px solid var(--ink);color:var(--ink);font-family:var(--body)} .ds-score{display:flex;align-items:center;gap:0.625rem;min-height:3.5rem;padding:0.25rem;border-bottom:1px solid var(--rule);font-size:1.0625rem} .ds-pressed{background:color-mix(in oklab,var(--seat-color) 14%,var(--ground))} .ds-rank{min-width:1rem;color:var(--ink-soft);font:800 1.25rem var(--display)} .ds-swatch{width:1.125rem;height:1.125rem;background:var(--seat-color)} .ds-gain{padding:0 0.3rem;border:2px solid var(--seat-color);background:color-mix(in oklab,var(--seat-color) 28%,var(--ground));font:600 0.9375rem var(--display)} .ds-move{padding-bottom:1px;border-bottom:4px solid var(--seat-color);font:800 0.9375rem var(--display);letter-spacing:0.12em;text-transform:uppercase} .ds-points{margin-left:auto;color:var(--seat-color);font:800 2.75rem/1 var(--display);font-variant-numeric:tabular-nums}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiz Night in the Back Room",
+    "overview": "Every room is a pub quiz: the scoreboard on the wall, the answer sheet on the table. The system follows the device's light/dark setting, and each mode is a different object rather than an inverted palette. Light mode is the answer sheet: white paper and print ink, with everything printed in full ink, rules and secondary text included. Dark mode is the chalkboard: flat slate and chalk, where the in-between tones are chalk thinned into slate.\n\nTwo values carry every screen. The site itself adds only three status colours (ok, waiting, danger). Every other hue belongs to a game: each game brings its own seat colours, and they appear only on that game's screens and in its seat swatches. Corners uses blue, yellow, red and green; a chess game would bring its own, or none. Headings, codes and numbers are set in bold condensed capitals like a pub board; running text is a plain sans. Controls are ruled boxes like the boxes on an answer sheet. Corners are square.\n\nThe screen is dense and tabular, never decorated. The game's signature is the live scoreboard: ranked best first, large numerals in each player's colour, re-ranking with a slide when scores change.",
+    "keyCharacteristics": [
+      "Two shell values per mode, plus three status colours; seat colours come from each game.",
+      "Condensed uppercase display type for headings, codes, labels and numerals; plain sans for sentences.",
+      "2px ink boxes and 2px ink rules carry structure; no fills, no shadows, no radius.",
+      "One reserved YOUR MOVE mark, underlined in your colour.",
+      "A change stays marked until the next move."
+    ],
+    "rules": [
+      {
+        "name": "The Two Values Rule",
+        "body": "The shell is drawn in ground and ink only. On the answer sheet, secondary text and thin rules are full ink; the only faint ink is the board grid, the wash under hover and selection, and played or illegal pieces. On the chalkboard, in-between tones are always chalk mixed into slate in oklab, never an unrelated grey.",
+        "section": "colors"
+      },
+      {
+        "name": "The Games Own Their Colours Rule",
+        "body": "The shell never uses a game's seat colours, and a game's colours never leak onto another game's screens or the site chrome. A hue on screen means either a status (ok, waiting, danger) or a player in the current game. Never introduce a brand accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Seat Rule",
+        "body": "A seat colour too light to read as text on the answer sheet prints its numerals in ink and keeps the colour in swatches and pieces. In Corners that is yellow.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pub Board Rule",
+        "body": "Numbers and codes are always condensed 800 with tabular figures. Sentences are never set in the condensed face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lowercase Settings Rule",
+        "body": "Labels are uppercased by CSS, never by the source text, so settings strings stay lowercase and read in a sentence.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Nothing floats. To raise attention, thicken the ink or wash the ground; never add a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** draw every shell element in ground and ink only; on the answer sheet, print secondary text and rules in full ink.",
+      "**Do** let each game define its own seat colours, with a brighter set for the chalkboard, and use them only to mean a player in that game.",
+      "**Do** print a seat colour's numerals in ink on the answer sheet when the colour can't be read as text there (Corners' yellow).",
+      "**Do** box controls and sheets in 2px ink with square corners, and rule lists with a 2px ink top rule and thinner row dividers.",
+      "**Do** set codes, scores and headings in Barlow Condensed 800 uppercase with tabular figures; set sentences in Barlow.",
+      "**Do** keep a change marked (gain chip, last-move outline) until the next move.",
+      "**Do** keep controls at least 2.75rem tall and respect reduced motion for the re-rank slide."
+    ],
+    "donts": [
+      "**Don't** add a brand accent, or use a game's seat colours for site chrome, status or another game.",
+      "**Don't** introduce unrelated greys; in-between tones are ink mixed into the ground in oklab.",
+      "**Don't** round corners or add drop shadows.",
+      "**Don't** use a second YOUR MOVE-style mark; the underline in your colour is reserved for that one meaning.",
+      "**Don't** use text glyphs for icons; draw them as inline SVG strokes."
+    ]
+  }
+}

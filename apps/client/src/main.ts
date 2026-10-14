@@ -6,10 +6,15 @@ import {
   ROOM_SETTINGS,
   type Setting,
 } from "@backroom/shared";
-import { html, render } from "lit-html";
+import "@fontsource/barlow/400.css";
+import "@fontsource/barlow/600.css";
+import "@fontsource/barlow-condensed/600.css";
+import "@fontsource/barlow-condensed/800.css";
+import { html, nothing, render } from "lit-html";
 import { createRoom, getRoom } from "./api";
 import { type GameActions, gameTrayProps, newGameLocal, turnCameToYou } from "./games/corners/game";
 import { listenForTrayKeys } from "./games/corners/tray";
+import { animateRanks, rankPositions } from "./rank-motion";
 import { normalizeCode, parseRoute, type Route, roomPath, withPlayer } from "./routes";
 import { newSession, receive, type Session } from "./session";
 import { type ConnectionStatus, connect } from "./socket";
@@ -48,7 +53,9 @@ const root = document.getElementById("app");
 if (!root) throw new Error("missing #app element");
 
 function draw() {
+  const ranks = rankPositions(root as HTMLElement);
   render(view(), root as HTMLElement);
+  animateRanks(root as HTMLElement, ranks);
   tickWhileTimed();
 }
 
@@ -70,7 +77,12 @@ function view() {
   const restarting = session?.restarting
     ? html`<p class="notice" role="status">Updating, back in a moment…</p>`
     : null;
-  return html`${restarting}${page()}
+  // The landing page's own heading is the wordmark; every other page links back to it.
+  const bar =
+    route.name === "landing"
+      ? nothing
+      : html`<nav class="site-bar" aria-label="Site"><a class="wordmark" href="/">Backroom Games</a></nav>`;
+  return html`${restarting}${bar}${page()}
     <footer>
       Server: <span data-testid="connection" class="status ${connection}">${statusText[connection]}</span>
     </footer>`;

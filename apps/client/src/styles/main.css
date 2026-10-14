@@ -1,340 +1,143 @@
+/* Quiz night in the back room: in dark mode the chalkboard (slate and chalk),
+   in light mode the answer sheet (white paper and print ink). Two values carry
+   every screen; the four piece colors do every other job. Headings and numbers
+   are set in condensed capitals like a pub board. Corners are square. */
+
 :root {
   color-scheme: light dark;
-  --bg: #f7f5f0;
-  --fg: #1d1d1f;
-  --muted: #6b6b70;
-  --ok: #2f8f46;
-  --warn: #b7791f;
 
-  /* Corners piece colors */
+  /* The answer sheet */
+  --ground: #ffffff;
+  --ink: #14191b;
+
+  /* The site's own status colors: connected or online, waiting, and errors
+     (red text that stays readable on the ground). They belong to no game. */
+  --ok: #2f9a50;
+  --waiting: #d99a00;
+  --danger: #b8322b;
+
+  /* Seat colors come from each game, as --color-<name> for the color names its
+     state uses, and only that game's screens and seat swatches show them.
+     Corners: its four piece colors. */
   --color-blue: #2f6fdb;
   --color-yellow: #e8b923;
   --color-red: #d6453d;
-  --color-green: #3a9d55;
+  --color-green: #2f9a50;
 
-  /* Corners board */
-  --board-empty: #e6e2d8;
-  --board-line: #c9c4b8;
-  --ghost-illegal: #8e8e93;
-  /* A piece already played, still in its tray slot */
-  --piece-played: #c2bcb0;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: Barlow, system-ui, sans-serif;
 
-  font-family: system-ui, sans-serif;
+  font-family: var(--body);
   line-height: 1.5;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #18181b;
-    --fg: #ececee;
-    --muted: #9a9aa2;
-    --board-empty: #26262b;
-    --board-line: #3a3a41;
-    --ghost-illegal: #6e6e76;
-    --piece-played: #3f3f46;
+    /* The chalkboard */
+    --ground: #1e292d;
+    --ink: #f1f0ea;
+
+    --ok: #43b267;
+    --waiting: #f2c230;
+    --danger: #ff8a80;
+
+    /* Corners, brighter, like chalk markers on slate. */
+    --color-blue: #4a86f2;
+    --color-yellow: #f2c230;
+    --color-red: #ec5a50;
+    --color-green: #43b267;
   }
 }
+
+/* Between the two values: on the answer sheet everything is printed in full
+   ink, rules included, and only the board's grid is faint. Hover and selection
+   get the same faint wash on both sheet and board. */
+:root {
+  --ink-soft: var(--ink);
+  --rule: var(--ink);
+  --cell: color-mix(in oklab, var(--ink) 6%, var(--ground));
+
+  /* Corners board */
+  --board-empty: var(--ground);
+  --board-line: color-mix(in oklab, var(--ink) 18%, var(--ground));
+  --ghost-illegal: color-mix(in oklab, var(--ink) 40%, var(--ground));
+  /* A piece already played, still in its tray slot */
+  --piece-played: color-mix(in oklab, var(--ink) 16%, var(--ground));
+
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2314191b' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* On the chalkboard, the in-between tones are chalk thinned into slate. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink-soft: color-mix(in oklab, var(--ink) 68%, var(--ground));
+    --rule: color-mix(in oklab, var(--ink) 22%, var(--ground));
+    --cell: color-mix(in oklab, var(--ink) 6%, var(--ground));
+    --board-empty: var(--cell);
+    --board-line: color-mix(in oklab, var(--ink) 15%, var(--ground));
+    --ghost-illegal: var(--ink-soft);
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23f1f0ea' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+  }
+}
+
+/* Base */
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--ground);
+  color: var(--ink);
+  caret-color: var(--ink);
+  scrollbar-color: var(--rule) var(--ground);
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
 }
 
 #app {
-  max-width: 48rem;
+  max-width: 72rem;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 0 1rem 2rem;
+}
+
+@media (min-width: 48rem) {
+  #app {
+    padding-inline: 2rem;
+  }
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--ink-soft);
 }
 
-footer {
-  margin-top: 3rem;
-  font-size: 0.875rem;
-  color: var(--muted);
-}
-
-/* "Updating, back in a moment": stays in view above the board. */
-.notice {
-  position: sticky;
-  top: 0.5rem;
-  z-index: 1;
-  margin: 0 0 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--warn);
-  border-radius: 0.5rem;
-  background: var(--bg);
-  color: var(--warn);
-  text-align: center;
-}
-
-.status.open {
-  color: var(--ok);
-}
-
-.status.connecting,
-.status.closed {
-  color: var(--warn);
-}
-
-/* Corners board: square, as wide as the page allows but short enough that it
-   fits on screen with room left for controls. */
-.corners-board {
-  display: block;
-  width: 100%;
-  max-width: 75svh;
-  height: auto;
-  aspect-ratio: 1;
-  margin: 0 auto;
-  /* Don't clip the last-move outline along the board's edge. */
-  overflow: visible;
-}
-
-.corners-board .square {
-  stroke: var(--board-line);
-  stroke-width: 1px;
-  vector-effect: non-scaling-stroke;
-}
-
-.corners-board .start {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.corners-board .candidates {
-  opacity: 0.45;
-  pointer-events: none;
-}
-
-.corners-board .last-move {
-  fill: none;
-  stroke: var(--fg);
-  stroke-width: 3px;
-  stroke-linecap: square;
-  vector-effect: non-scaling-stroke;
-}
-
-.corners-board .overlay {
-  fill-opacity: 0.9;
-  stroke: var(--fg);
-  stroke-width: 2px;
-  pointer-events: none;
-}
-
-.corners-board .overlay rect {
-  vector-effect: non-scaling-stroke;
-}
-
-.corners-board .overlay.invalid {
-  fill-opacity: 0.75;
-  stroke: var(--muted);
-  stroke-dasharray: 4 3;
-}
-
-/* Corners game layout (games/corners/game.ts): the board, and the controls
-   and tray (or another player's pieces) under it. When there's room, they move
-   to a column left of the board, and the board shrinks to fit the screen's
-   height with the players row above it. */
-@media (min-width: 48rem) {
-  #app:has(.corners-layout) {
-    /* The side column, the gap and the board. */
-    max-width: max(48rem, calc(100svh + 3rem));
-  }
-
-  .corners-layout {
-    display: grid;
-    grid-template-columns: 16.5rem minmax(0, calc(100svh - 15rem));
-    grid-template-areas: "side board";
-    justify-content: center;
-    align-items: start;
-    gap: 1.5rem;
-  }
-
-  .corners-layout-board {
-    grid-area: board;
-  }
-
-  .corners-side {
-    grid-area: side;
-  }
-
-  .corners-layout .corners-board {
-    max-width: none;
-  }
-
-  .corners-side .corners-status {
-    /* Two lines, so a longer reason doesn't push the tray down. */
-    min-height: 3em;
-    margin: 0.5rem 0 0;
-    text-align: left;
-  }
-
-  .corners-side .corners-controls {
-    justify-content: flex-start;
-  }
-
-  .corners-side .corners-controls button {
-    flex: 1;
-    padding: 0 0.25rem;
-    white-space: nowrap;
-  }
-
-  .corners-side .corners-controls .label {
-    display: none;
-  }
-
-  .corners-side .corners-tray {
-    margin-top: 0.5rem;
-  }
-
-  .corners-side .tray-pieces {
-    grid-template-columns: repeat(6, 2.25rem);
-  }
-
-  .corners-side .pass {
-    justify-content: flex-start;
-  }
-
-  .corners-side .hand-head {
-    margin-top: 0;
-  }
-}
-
-/* Corners tray (games/corners/tray.ts): the controls and remaining pieces.
-   Sized for thumbs; the board keeps normal page scrolling and places pieces
-   on tap. */
-.corners-play-board {
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-.corners-play-board.placing {
-  cursor: pointer;
-}
-
-.corners-status {
-  min-height: 1.5em;
-  margin: 0.75rem 0 0.5rem;
-  text-align: center;
-}
-
-.corners-controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.corners-play button {
-  min-height: 2.75rem;
-  padding: 0 0.9rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.5rem;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  cursor: pointer;
-}
-
-.corners-play .key-cap {
-  display: inline-block;
-  min-width: 1.4em;
-  margin-left: 0.35rem;
-  padding: 0 0.3em;
-  border: 1px solid var(--board-line);
-  border-bottom-width: 2px;
-  border-radius: 0.3rem;
-  color: var(--muted);
-  font: inherit;
-  font-size: 0.75em;
-  line-height: 1.5;
-  text-align: center;
-  vertical-align: 0.1em;
-}
-
-/* Nothing can hover, so it's a touch-only device: no keyboard to show keys for. */
-@media (any-hover: none) {
-  .corners-play .key-cap {
-    display: none;
-  }
-}
-
-.corners-play button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-/* Pieces in rows by size, each with its square count on the left. Shared by
-   your tray and another player's hand. */
-.corners-tray {
-  display: grid;
-  gap: 0.25rem;
-  margin-top: 0.75rem;
-}
-
-.tray-row {
-  display: grid;
-  grid-template-columns: 1.25rem 1fr;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.tray-size {
-  color: var(--muted);
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
-.tray-pieces {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 2.5rem);
-  gap: 0.25rem;
-}
-
-/* Played pieces keep their slot, grayed out, so the tray never shifts. */
-.tray-piece.played svg {
-  fill: var(--piece-played);
-}
-
-.corners-play .tray-piece.played:disabled {
-  opacity: 1;
-  border-style: dashed;
-}
-
-.hand .tray-piece.played {
-  border-style: dashed;
-}
-
-.corners-play .tray-piece {
-  aspect-ratio: 1;
-  min-height: 0;
-  padding: 0.2rem;
-  border-radius: 0.375rem;
-}
-
-.corners-play .tray-piece svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.corners-play .tray-piece[aria-pressed="true"] {
-  border-color: var(--fg);
-  box-shadow: inset 0 0 0 2px var(--fg);
-  background: var(--board-empty);
-}
-
-@media (max-width: 30rem) {
-  .corners-controls .label {
-    display: none;
-  }
-}
-
-/* Landing page, create form and name prompt: join or create a room. */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -344,75 +147,202 @@ footer {
   white-space: nowrap;
 }
 
-.entry-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.25rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.75rem;
-}
+/* Controls: ruled boxes, like the boxes on an answer sheet. */
 
-.entry-card h2,
-.entry-card p {
-  margin: 0;
-}
-
-.entry-card h2 {
-  font-size: 1.25rem;
-}
-
-.entry-card label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-weight: 600;
-}
-
-.entry-card input,
-.entry-card select,
-.entry-card button {
-  /* At least 16px so phones don't zoom in on focus, and big enough to tap. */
-  font: inherit;
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   box-sizing: border-box;
   min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-}
-
-.entry-card input,
-.entry-card select {
-  border: 1px solid var(--board-line);
-  background: var(--bg);
-  color: var(--fg);
-  font-weight: 400;
-}
-
-.entry-card .code-input {
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  font-family: ui-monospace, monospace;
-}
-
-.entry-card button {
-  border: none;
-  background: var(--fg);
-  color: var(--bg);
-  font-weight: 600;
+  padding: 0 1rem;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 600 1rem / 1.2 var(--body);
   cursor: pointer;
+  transition: background-color 120ms ease-out;
 }
 
-.entry-card button:disabled {
-  opacity: 0.6;
-  cursor: progress;
+button:hover:not(:disabled) {
+  background: var(--cell);
+}
+
+button:active:not(:disabled) {
+  translate: 0 1px;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+button.primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--ink) 86%, var(--ground));
+}
+
+.icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke-linecap: square;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+input,
+select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--ground);
+  color: var(--ink);
+  /* At least 16px, so phones don't zoom in on focus. */
+  font: 400 1rem var(--body);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+select {
+  appearance: none;
+  padding-right: 2.5rem;
+  background: var(--ground) var(--chevron) no-repeat right 0.75rem center / 1rem;
+}
+
+input::placeholder {
+  color: var(--ink-soft);
 }
 
 .form-error {
-  color: var(--color-red);
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
 }
 
-.join-card {
-  margin-top: 2rem;
+/* The bar that leads back to the landing page. */
+.site-bar {
+  padding: 1rem 0 0.25rem;
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.wordmark:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.status::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.375rem;
+  border-radius: 50%;
+  background: var(--waiting);
+}
+
+.status.open::before {
+  background: var(--ok);
+}
+
+.status.closed::before {
+  background: var(--danger);
+}
+
+/* "Updating, back in a moment": stays in view above the board. */
+.notice {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 1;
+  margin: 1rem 0;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid var(--waiting);
+  background: var(--ground);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Landing page: the wordmark, joining by code, and the games to create. */
+
+.landing-head {
+  padding: 3rem 0 1.5rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.landing-head h1 {
+  font-size: clamp(3.25rem, 12vw, 6rem);
+  letter-spacing: 0.01em;
+}
+
+/* Joining comes first, the games to create below it, at every width. */
+.landing-grid {
+  display: grid;
+  gap: 3rem;
+  margin-top: 2.5rem;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 2px solid var(--ink);
+}
+
+.sheet h2,
+.sheet p {
+  margin: 0;
+}
+
+.sheet h2 {
+  font-size: 1.75rem;
+}
+
+.code-input {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Lighter than a typed code, so the sample never reads as filled in. */
+.code-input::placeholder {
+  font-weight: 400;
+  letter-spacing: 0.2em;
 }
 
 /* Name, code and Join on one row where there's room, stacked on phones. */
@@ -424,7 +354,8 @@ footer {
 }
 
 .join-fields button {
-  padding-inline: 1.5rem;
+  min-height: 3rem;
+  padding-inline: 1.75rem;
 }
 
 @media (max-width: 36rem) {
@@ -433,149 +364,251 @@ footer {
   }
 }
 
-.create {
-  margin-top: 2.5rem;
-}
-
 .create h2 {
-  margin: 0 0 1rem;
-  font-size: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .game-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  border-top: 2px solid var(--ink);
 }
 
-.game-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.25rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.75rem;
-  color: inherit;
+.game-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 0.5rem;
+  border-bottom: 2px solid var(--ink);
   text-decoration: none;
+  transition: background-color 120ms ease-out;
 }
 
-.game-card:hover,
-.game-card:focus-visible {
-  border-color: var(--fg);
-  background: var(--board-empty);
+.game-row:hover {
+  background: var(--cell);
+}
+
+.game-row .arrow {
+  transition: translate 200ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .game-row:hover .arrow {
+    translate: 4px 0;
+  }
+}
+
+.game-mark {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.game-mark-board {
+  fill: var(--board-empty);
+  stroke: var(--board-line);
+  stroke-width: 0.1;
 }
 
 .game-name {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-family: var(--display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .players {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  color: var(--muted);
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
+/* Create form and name prompt */
+
 .back {
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-decoration: none;
 }
 
-.create-form {
-  max-width: 24rem;
+.back:hover {
+  color: var(--ink);
 }
 
-.create-form h1 {
-  margin: 0;
-  font-size: 1.5rem;
+.create-form,
+.name-prompt {
+  max-width: 28rem;
 }
 
 .name-prompt {
-  max-width: 24rem;
+  margin-top: 2rem;
 }
 
-/* Lobby (views/lobby.ts): the room code, the seats and the Start button. */
-.room-code {
+.sheet-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.sheet-head h1,
+.name-prompt h1 {
+  font-size: 2.25rem;
+}
+
+.sheet button[type="submit"] {
+  min-height: 3.25rem;
+  font-size: 1.0625rem;
+}
+
+/* Room page: the code on the wall, the game, the invite link. */
+
+.room-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 2px solid var(--ink);
+}
+
+.room-code {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  margin: 0;
+}
+
+.room-code-label {
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .room-code strong {
-  font-family: ui-monospace, monospace;
+  font-family: var(--display);
+  font-size: clamp(2.75rem, 9vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+.room-head h1 {
   font-size: 1.5rem;
-  letter-spacing: 0.15em;
-}
-
-.lobby button {
-  font: inherit;
-  min-height: 2.75rem;
-  padding: 0 0.9rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.5rem;
-  background: var(--bg);
-  color: var(--fg);
-  cursor: pointer;
-}
-
-.lobby button.start:not(:disabled) {
-  border-color: var(--ok);
-  background: var(--ok);
-  color: #fff;
   font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
-.lobby button:disabled {
-  opacity: 0.45;
-  cursor: default;
+.invite {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0 auto;
+}
+
+@media (max-width: 40rem) {
+  .room-head {
+    margin-bottom: 1rem;
+  }
+
+  .room-head h1 {
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  /* The header's rule already sits right above the scoreboard. */
+  .corners-status-area .scores {
+    border-top: 0;
+  }
+}
+
+.copy-status {
+  color: var(--ink-soft);
+}
+
+.copy-status:empty {
+  display: none;
+}
+
+.waiting {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Lobby (views/lobby.ts): who's in, the settings and the Start button. */
+
+.lobby {
+  max-width: 40rem;
 }
 
 .seats {
-  list-style: none;
   margin: 1rem 0;
   padding: 0;
-  border: 1px solid var(--board-line);
-  border-radius: 0.75rem;
+  list-style: none;
+  border-top: 2px solid var(--ink);
 }
 
 .seat {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 0.25rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: 1.125rem;
 }
 
-.seat + .seat {
-  border-top: 1px solid var(--board-line);
+.seat-number {
+  min-width: 1.25rem;
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 800;
 }
 
 .seat .presence {
-  width: 0.6rem;
-  height: 0.6rem;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   background: var(--ok);
 }
 
 .seat.offline .presence {
-  background: var(--board-line);
+  box-sizing: border-box;
+  border: 2px solid var(--rule);
+  background: none;
 }
 
 .seat.offline .seat-name {
-  color: var(--muted);
+  color: var(--ink-soft);
 }
 
 .seat .tag {
   padding: 0 0.4rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  color: var(--muted);
+  border: 1.5px solid var(--ink);
+  font-family: var(--display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .seat-colors {
@@ -585,183 +618,452 @@ footer {
 }
 
 .swatch {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
-/* Game and results (games/corners/game.ts): whose turn, the scores, Pass and
-   Rematch around the board. */
-.turn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 0 0 0.75rem;
+.lobby .start {
+  min-width: 10rem;
+  min-height: 3.25rem;
   font-size: 1.125rem;
 }
 
-.turn.yours {
-  font-weight: 700;
+/* Corners game (games/corners/game.ts): the scoreboard and turn, the board,
+   then the controls and tray (or another player's pieces). Stacked in that
+   order on phones; with room, the scoreboard and tray share a column left of
+   the board, which shrinks to fit the screen's height. */
+
+.corners-layout {
+  display: grid;
+  grid-template-areas: "status" "board" "side";
+  gap: 1.25rem;
 }
 
-.countdown {
-  font-variant-numeric: tabular-nums;
-  font-weight: 400;
-  color: var(--muted);
+.corners-status-area {
+  grid-area: status;
 }
 
-.countdown.urgent {
-  font-weight: 700;
-  color: var(--color-red);
+.corners-layout-board {
+  grid-area: board;
 }
+
+.corners-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 56rem) {
+  .corners-layout {
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, calc(100svh - 12rem));
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "status board" "side board";
+    align-items: start;
+    column-gap: 3rem;
+  }
+
+  .corners-side .corners-controls .label {
+    display: none;
+  }
+}
+
+/* The scoreboard: best first, each score in its player's color. */
 
 .scores {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0;
+  list-style: none;
+  border-top: 2px solid var(--ink);
 }
 
 .score {
-  display: flex;
-  flex: 1 1 10rem;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.5rem;
+  border-bottom: 1px solid var(--rule);
 }
 
-.score.current {
-  border-color: var(--fg);
-  box-shadow: inset 0 0 0 1px var(--fg);
+.player {
+  justify-content: flex-start;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.25rem 0.25rem;
+  border: 0;
+  font-weight: 400;
+  font-size: 1.0625rem;
+  text-align: left;
+}
+
+/* Whose pieces are showing, washed in that player's own color. */
+.player[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--seat-color) 14%, var(--ground));
+}
+
+.rank {
+  min-width: 1rem;
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
 .score .seat-colors {
   margin-left: 0;
 }
 
-.score .points {
+.score.current .seat-name {
+  font-weight: 600;
+}
+
+.points {
   margin-left: auto;
+  color: var(--seat-color, var(--ink));
+  font-family: var(--display);
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-/* The players row: each player is a button that shows their pieces. */
-.players .score {
-  padding: 0;
+/* On the answer sheet, yellow on white can't be read: yellow's score is printed in ink. */
+@media (prefers-color-scheme: light) {
+  [data-color="yellow"] .points {
+    color: var(--ink);
+  }
 }
 
-.players .player {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 0;
-  border-radius: inherit;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.players .player[aria-pressed="true"] {
-  background: var(--board-empty);
+/* The one mark that means it's your move, underlined in your color. */
+.your-move {
+  padding-bottom: 1px;
+  border-bottom: 4px solid var(--mark);
+  font-family: var(--display);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .to-move {
-  color: var(--muted);
-  font-size: 0.875rem;
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Points the last move earned, until the next move. */
+.gain {
+  padding: 0 0.3rem;
+  border: 2px solid var(--seat-color);
+  background: color-mix(in oklab, var(--seat-color) 28%, var(--ground));
+  font-family: var(--display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.turn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0.875rem 0 0;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.turn .swatch {
+  background: var(--turn-color);
+}
+
+.turn.yours {
+  font-weight: 800;
+}
+
+.countdown {
+  margin-left: auto;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown.urgent {
+  color: var(--danger);
+  font-weight: 800;
+}
+
+@media (max-width: 30rem) {
+  .player {
+    min-height: 2.75rem;
+  }
+
+  .points {
+    font-size: 1.75rem;
+  }
+}
+
+/* Corners board */
+
+.corners-board {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  /* Don't clip the last-move outline along the board's edge. */
+  overflow: visible;
+}
+
+.corners-board .square {
+  stroke: var(--board-line);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.corners-board .start {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.corners-board .candidates {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.corners-board .last-move {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3px;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+}
+
+.corners-board .overlay {
+  fill-opacity: 0.9;
+  stroke: var(--ink);
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.corners-board .overlay rect {
+  vector-effect: non-scaling-stroke;
+}
+
+.corners-board .overlay.invalid {
+  fill-opacity: 0.75;
+  stroke: var(--ink-soft);
+  stroke-dasharray: 4 3;
+}
+
+/* Corners tray (games/corners/tray.ts): the controls and remaining pieces.
+   Sized for thumbs; the board keeps normal page scrolling and places pieces
+   on tap. */
+
+.corners-play-board {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.corners-play-board.placing {
+  cursor: pointer;
+}
+
+.corners-play {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.corners-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.corners-controls button {
+  padding: 0 0.5rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .corners-controls .label {
+    display: none;
+  }
+}
+
+.corners-status {
+  /* Two lines, so a longer reason doesn't push the tray down. */
+  min-height: 3em;
+  margin: 0;
+}
+
+.key-cap {
+  min-width: 1.4em;
+  padding: 0 0.3em;
+  border: 1.5px solid var(--rule);
+  border-bottom-width: 3px;
+  color: var(--ink-soft);
+  font: 600 0.8125rem / 1.5 var(--display);
+  text-align: center;
+}
+
+/* Nothing can hover, so it's a touch-only device: no keyboard to show keys for. */
+@media (any-hover: none) {
+  .key-cap {
+    display: none;
+  }
+}
+
+/* Pieces in rows by size, each with its square count on the left. Shared by
+   your tray and another player's hand, at the same size in both. */
+.corners-tray {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.tray-row {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.tray-size {
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.tray-pieces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 2.5rem);
+  gap: 0.25rem;
+}
+
+.tray-piece {
+  box-sizing: border-box;
+  display: block;
+  width: 2.5rem;
+  aspect-ratio: 1;
+  min-height: 0;
+  padding: 0.2rem;
+  border: 1.5px solid var(--rule);
+}
+
+.tray-piece svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.corners-play .tray-piece[aria-pressed="true"] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+  background: var(--cell);
+}
+
+/* Played pieces keep their slot, grayed out, so the tray never shifts. */
+.tray-piece.played {
+  border-style: dashed;
+}
+
+.tray-piece.played svg {
+  fill: var(--piece-played);
+}
+
+.corners-play .tray-piece.played:disabled {
+  opacity: 1;
 }
 
 /* Another player's remaining pieces, read-only, in place of your tray. */
+.hand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .hand-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin: 1rem 0 0;
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.125rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.hand button {
-  font: inherit;
-  font-weight: 400;
-  min-height: 2.75rem;
-  padding: 0 0.9rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.5rem;
-  background: var(--bg);
-  color: var(--fg);
-  cursor: pointer;
-}
-
-.hand .tray-piece {
-  aspect-ratio: 1;
-  padding: 0.2rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.375rem;
-}
-
-.hand .tray-piece svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.results .scores {
-  flex-direction: column;
-}
-
-.results .score {
-  flex: none;
-}
-
-.results .rank {
-  min-width: 2.5rem;
-  font-weight: 700;
-}
-
-.winner {
-  font-size: 1.25rem;
-  font-weight: 600;
+.hand-head button {
+  font-family: var(--body);
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .pass {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  margin: 0;
 }
 
-.pass button,
-.results button {
-  font: inherit;
-  min-height: 2.75rem;
-  padding: 0 0.9rem;
-  border: 1px solid var(--board-line);
-  border-radius: 0.5rem;
-  background: var(--bg);
-  color: var(--fg);
-  cursor: pointer;
+.pass .muted {
+  font-size: 0.9375rem;
 }
 
-.pass button:disabled {
-  opacity: 0.45;
-  cursor: default;
+/* Results: the final scoreboard and Rematch beside the final board. */
+
+.results {
+  display: grid;
+  gap: 2rem;
 }
 
-.results button.primary {
-  border-color: var(--ok);
-  background: var(--ok);
-  color: #fff;
-  font-weight: 600;
+@media (min-width: 56rem) {
+  .results {
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, calc(100svh - 12rem));
+    align-items: start;
+    column-gap: 3rem;
+  }
+}
+
+.results-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.results-side p {
+  margin: 0;
+}
+
+.winner {
+  font-family: var(--display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.results .score {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3rem;
+  padding: 0.25rem;
+}
+
+.results .rank {
+  min-width: 2.5rem;
+}
+
+.results .primary {
+  min-width: 10rem;
+  min-height: 3.25rem;
+  font-size: 1.125rem;
 }

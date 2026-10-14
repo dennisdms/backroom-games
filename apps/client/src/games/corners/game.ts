@@ -7,6 +7,7 @@ import {
   HINTS,
   legalMovesExist,
   type Placement,
+  placementSquares,
   type RoomState,
   rankByScore,
   score,
@@ -204,16 +205,19 @@ export const cornersGame = (
   const tray = gameTrayProps(room, state, l, a);
   const yours = isYourTurn(room, state);
   const play = tray && cornersTray(tray);
-  // The board, and beside it (below on narrow screens) your controls and tray
-  // or another player's pieces.
+  // The scoreboard and turn, the board, then your controls and tray or another
+  // player's pieces. Side by side when there's room, stacked in that order on
+  // phones.
   return html`<section class="game" data-testid="game">
-    ${players(room, state, l, a)}
-    <p class="turn ${yours ? "yours" : ""}">
-      <span class="swatch" style="background: var(--color-${state.turn})"></span>
-      <span data-testid="turn" aria-live="polite">${turnText(room, state)}</span>
-      ${countdown(timeLeft)}
-    </p>
     <div class="corners-layout">
+      <div class="corners-status-area">
+        ${scoreboard(room, state, l, a)}
+        <p class="turn ${yours ? "yours" : ""}" style="--turn-color: var(--color-${state.turn})">
+          <span class="swatch"></span>
+          <span data-testid="turn" aria-live="polite">${turnText(room, state)}</span>
+          ${countdown(timeLeft)}
+        </p>
+      </div>
       <div class="corners-layout-board">${play ? play.board : cornersBoard(state)}</div>
       ${
         play || hand
@@ -269,18 +273,35 @@ const pass = (state: CornersState, color: Color, a: GameActions) => {
 };
 
 /**
- * The players and their live scores, one per seat, with the seat to move
- * marked. Clicking one shows their remaining pieces; yours shows your tray.
+ * How many points `seat` gained with the last move, or 0. A score that just
+ * rose stays marked until the next move.
  */
-const players = (room: RoomState, state: CornersState, l: GameLocal, a: GameActions) => {
-  const { byColor, bySeat } = score(state);
+export const lastGain = (state: CornersState, seat: number): number => {
+  const last = state.lastMove;
+  if (last?.move.kind !== "place" || seatOf(state, last.color) !== seat) return 0;
+  return placementSquares(last.move)?.length ?? 0;
+};
+
+/**
+ * The scoreboard: every player, best score first, re-ranking as scores change,
+ * with the seat to move marked. Clicking one shows their remaining pieces;
+ * yours shows your tray.
+ */
+const scoreboard = (room: RoomState, state: CornersState, l: GameLocal, a: GameActions) => {
+  const { byColor } = score(state);
   const moving = seatOf(state, state.turn);
   const shown = viewedHand(room, state, l)?.seat ?? room.you;
-  return html`<ul class="scores players" data-testid="scores" aria-label="Players">
-    ${state.variant.seats.map((colors, seat) => {
-      const name = nameOf(room, seat);
+  return html`<ol class="scores" data-testid="scores" aria-label="Players">
+    ${standings(room, state).map(({ seat, name, colors, score: points, rank }) => {
       const you = seat === room.you;
-      return html`<li class="score ${seat === moving ? "current" : ""}" data-seat=${seat}>
+      const gain = lastGain(state, seat);
+      return html`<li
+        class="score ${seat === moving ? "current" : ""}"
+        data-seat=${seat}
+        data-color=${colors[0] ?? state.turn}
+        data-rank-key="seat-${seat}"
+        style="--seat-color: var(--color-${colors[0] ?? state.turn})"
+      >
         <button
           type="button"
           class="player"
@@ -291,15 +312,23 @@ const players = (room: RoomState, state: CornersState, l: GameLocal, a: GameActi
             a.draw();
           }}
         >
+          <span class="rank" aria-hidden="true">${rank}</span>
           ${swatches(colors, (c) => `${c}: ${byColor[c]}`)}
           <span class="seat-name">${name}</span>
           ${you ? html`<span class="muted">(you)</span>` : nothing}
-          ${seat === moving ? html`<span class="to-move">to move</span>` : nothing}
-          <strong class="points">${bySeat[seat]}</strong>
+          ${
+            seat === moving
+              ? you
+                ? html`<span class="your-move" style="--mark: var(--color-${state.turn})">Your move</span>`
+                : html`<span class="to-move">to move</span>`
+              : nothing
+          }
+          ${gain ? html`<span class="gain" title="Last move">+${gain}</span>` : nothing}
+          <strong class="points">${points}</strong>
         </button>
       </li>`;
     })}
-  </ul>`;
+  </ol>`;
 };
 
 const swatches = (colors: readonly Color[], title: (color: Color) => string) =>
@@ -314,24 +343,32 @@ const swatches = (colors: readonly Color[], title: (color: Color) => string) =>
 export const cornersResults = (room: RoomState, state: CornersState, a: GameActions) => {
   const list = standings(room, state);
   return html`<section class="results" data-testid="results">
-    <h2>Game over</h2>
-    <p class="winner" data-testid="winner">${resultText(room, list)}</p>
-    <ul class="scores" data-testid="standings" aria-label="Final scores">
-      ${list.map(
-        (s) => html`<li class="score" data-seat=${s.seat} data-rank=${s.rank}>
-          <span class="rank">${ordinal(s.rank)}</span>
-          ${swatches(s.colors, (c) => c)}
-          <span class="seat-name">${s.name}</span>
-          ${s.seat === room.you ? html`<span class="muted">(you)</span>` : nothing}
-          <strong class="points">${s.score}</strong>
-        </li>`,
-      )}
-    </ul>
-    ${
-      room.you === room.host
-        ? html`<p><button type="button" class="primary" @click=${a.onRematch}>Rematch</button></p>`
-        : html`<p class="muted">Waiting for the host to start a rematch.</p>`
-    }
-    ${cornersBoard(state)}
+    <div class="results-side">
+      <h2>Game over</h2>
+      <p class="winner" data-testid="winner">${resultText(room, list)}</p>
+      <ol class="scores" data-testid="standings" aria-label="Final scores">
+        ${list.map(
+          (s) => html`<li
+            class="score"
+            data-seat=${s.seat}
+            data-rank=${s.rank}
+            data-color=${s.colors[0] ?? "blue"}
+            style="--seat-color: var(--color-${s.colors[0] ?? "blue"})"
+          >
+            <span class="rank">${ordinal(s.rank)}</span>
+            ${swatches(s.colors, (c) => c)}
+            <span class="seat-name">${s.name}</span>
+            ${s.seat === room.you ? html`<span class="muted">(you)</span>` : nothing}
+            <strong class="points">${s.score}</strong>
+          </li>`,
+        )}
+      </ol>
+      ${
+        room.you === room.host
+          ? html`<p><button type="button" class="primary" @click=${a.onRematch}>Rematch</button></p>`
+          : html`<p class="waiting">Waiting for the host to start a rematch.</p>`
+      }
+    </div>
+    <div class="results-board">${cornersBoard(state)}</div>
   </section>`;
 };
