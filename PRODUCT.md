@@ -51,7 +51,7 @@ is the only way in.
 
 ## Brand Commitments
 
-- The name is "Backroom Games". Current tagline: "Board games for the backroom."
+- The name is "Backroom Games". There is no tagline.
 - Game names are original. Never use trademarked titles of the games they
   resemble.
 - Free, with no ads, payments or growth mechanics.
